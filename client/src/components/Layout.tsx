@@ -1,6 +1,7 @@
 import { useIsFetching } from '@tanstack/react-query';
-import { type ReactNode, useEffect, useState } from 'react';
+import { type ReactNode, Suspense, useEffect, useState } from 'react';
 import { NavLink, Outlet } from 'react-router';
+import { Loading } from './States';
 
 const NAV = [
   ['/', 'Home'],
@@ -49,9 +50,11 @@ export function Layout({ account }: { account?: ReactNode }) {
       </header>
       <WakingBanner />
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
-        <Outlet />
+        <Suspense fallback={<Loading />}>
+          <Outlet />
+        </Suspense>
       </main>
-      <footer className="border-t border-zinc-800 px-4 py-6 text-center text-xs text-zinc-500">
+      <footer className="border-t border-zinc-800 px-4 py-6 text-center text-xs text-zinc-400">
         Unofficial fan project. Not associated with Formula 1, the FIA or Formula One Management.
       </footer>
     </div>
