@@ -20,24 +20,23 @@ export default function ResultsPage() {
       <Link to={`/schedule?season=${season}`} className="text-sm text-zinc-400 hover:text-white">
         ← {season} schedule
       </Link>
+      <div role="group" aria-label="Session" className="mb-4 flex gap-2">
+        {TYPES.map(([t, label]) => (
+          <button
+            key={t}
+            type="button"
+            aria-pressed={t === type}
+            onClick={() => setParams({ type: t }, { replace: true })}
+            className={`rounded px-3 py-1 text-sm ${t === type ? 'bg-red-600' : 'bg-zinc-800 hover:bg-zinc-700'}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
       <QueryState q={q}>
         {(r) => (
           <>
             <PageHeader title={`${r.raceName} ${season}`} />
-            <div role="tablist" aria-label="Session" className="mb-4 flex gap-2">
-              {TYPES.map(([t, label]) => (
-                <button
-                  key={t}
-                  type="button"
-                  role="tab"
-                  aria-selected={t === type}
-                  onClick={() => setParams({ type: t })}
-                  className={`rounded px-3 py-1 text-sm ${t === type ? 'bg-red-600' : 'bg-zinc-800 hover:bg-zinc-700'}`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
             {r.entries.length === 0 ? (
               <p className="text-zinc-400">No results yet for this session.</p>
             ) : (

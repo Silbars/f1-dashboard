@@ -8,7 +8,7 @@ import { useSeason } from '../lib/useSeason';
 export default function StandingsPage({ kind }: { kind: 'drivers' | 'constructors' }) {
   const [season, setSeason] = useSeason();
   const q = useApi<Standings>(`/seasons/${season}/standings/${kind}`);
-  const title = kind === 'drivers' ? 'Drivers\' championship' : 'Constructors\' championship';
+  const title = kind === 'drivers' ? 'Drivers’ championship' : 'Constructors’ championship';
   return (
     <section>
       <PageHeader title={`${season} ${title}`}>
