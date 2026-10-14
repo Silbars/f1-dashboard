@@ -2,7 +2,7 @@
   "name": "f1-dashboard",
   "private": true,
   "type": "module",
-  "workspaces": ["shared", "server"],
+  "workspaces": ["shared", "server", "client"],
   "engines": { "node": ">=26" },
   "scripts": {
     "dev:server": "npm run dev -w server",
