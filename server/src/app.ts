@@ -2,6 +2,7 @@ import cookieParser from 'cookie-parser';
 import express from 'express';
 import helmet from 'helmet';
 import { config } from './config.ts';
+import { errorHandler, notFound } from './middleware/errorHandler.ts';
 
 export function createApp(_opts: { clientDir?: string } = {}) {
   const app = express();
@@ -14,6 +15,9 @@ export function createApp(_opts: { clientDir?: string } = {}) {
   app.get('/api/health', (_req, res) => {
     res.json({ ok: true });
   });
+
+  app.use('/api', notFound);
+  app.use(errorHandler);
 
   return app;
 }
