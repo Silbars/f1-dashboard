@@ -9,7 +9,7 @@ import { yearSchema } from '../src/schemas.ts';
 
 function testApp() {
   const app = express();
-  app.use(express.json());
+  app.use(express.json({ limit: '1kb' }));
   app.get('/app-error', () => {
     throw new AppError(418, 'TEAPOT', 'I am a teapot');
   });
@@ -51,6 +51,13 @@ describe('error handling', () => {
     const res = await request(testApp()).post('/echo').set('content-type', 'application/json').send('{"a":');
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('BAD_JSON');
+  });
+
+  it('returns 413 BAD_REQUEST for a body exceeding the size limit', async () => {
+    const oversizedBody = JSON.stringify({ data: 'x'.repeat(2000) });
+    const res = await request(testApp()).post('/echo').set('content-type', 'application/json').send(oversizedBody);
+    expect(res.status).toBe(413);
+    expect(res.body.error.code).toBe('BAD_REQUEST');
   });
 });
 

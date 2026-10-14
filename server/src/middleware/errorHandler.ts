@@ -20,6 +20,10 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     res.status(400).json({ error: { code: 'BAD_JSON', message: 'Malformed JSON body' } });
     return;
   }
+  if (typeof err?.status === 'number' && err.status >= 400 && err.status < 500) {
+    res.status(err.status).json({ error: { code: 'BAD_REQUEST', message: 'The request could not be processed' } });
+    return;
+  }
   console.error(err);
   res.status(500).json({ error: { code: 'INTERNAL', message: 'Something went wrong' } });
 };
