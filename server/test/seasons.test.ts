@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type MRData, toDriver, toRace, toRaceResults, toStandings, toTeam } from '../src/services/jolpica.transform.ts';
+import { CacheMeta } from '../src/models/CacheMeta.ts';
 import { clearDb, startDb, stopDb } from './db.ts';
 
 vi.mock('../src/services/jolpica.ts', () => ({
@@ -109,5 +110,20 @@ describe('season endpoints', () => {
     expect(res.status).toBe(503);
     expect(res.body.error.code).toBe('UPSTREAM_UNAVAILABLE');
     vi.restoreAllMocks();
+  });
+
+  it('returns cached data with stale header when upstream is down', async () => {
+    await request(app).get('/api/seasons/2025/schedule');
+    await CacheMeta.updateOne({ key: 'schedule:2025' }, { $set: { fetchedAt: new Date('2025-06-01T00:00:00Z') } });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      vi.mocked(jolpica.schedule).mockRejectedValue(new Error('down'));
+      const res = await request(app).get('/api/seasons/2025/schedule');
+      expect(res.status).toBe(200);
+      expect(res.headers['x-data-stale']).toBe('true');
+      expect(res.body).toHaveLength(24);
+    } finally {
+      warn.mockRestore();
+    }
   });
 });
