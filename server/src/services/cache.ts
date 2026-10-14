@@ -32,6 +32,7 @@ export async function cachedQuery<T>(opts: {
       console.warn('Upstream failed, serving stale cache:', (err as Error).message);
       return { data: cached.data, stale: true };
     }
+    console.error('Upstream failed and nothing is cached:', err);
     throw new AppError(503, 'UPSTREAM_UNAVAILABLE', 'The F1 data source is unavailable right now. Please try again shortly.');
   }
   await opts.save(fresh, now);

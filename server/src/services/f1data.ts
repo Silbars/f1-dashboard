@@ -11,6 +11,8 @@ import { jolpica } from './jolpica.ts';
 
 const HIDE = { _id: 0, __v: 0 } as const;
 
+const inflight = new Map<string, Promise<CacheResult<unknown>>>();
+
 function withMeta<T>(
   key: string,
   season: number,
@@ -18,7 +20,9 @@ function withMeta<T>(
   fetch: () => Promise<T>,
   save: (data: T) => Promise<void>,
 ): Promise<CacheResult<T>> {
-  return cachedQuery({
+  const existing = inflight.get(key);
+  if (existing) return existing as Promise<CacheResult<T>>;
+  const p = cachedQuery({
     season,
     load: async () => {
       const meta = await CacheMeta.findOne({ key }).lean();
@@ -30,9 +34,11 @@ function withMeta<T>(
       await CacheMeta.updateOne({ key }, { $set: { fetchedAt } }, { upsert: true });
     },
   });
+  inflight.set(key, p);
+  return p.finally(() => inflight.delete(key));
 }
 
-/** Upserts every doc by its key and deletes docs in `scope` that are no longer present. Safe to run concurrently. */
+/** Upserts every doc by its key and deletes docs in `scope` that are no longer present. withMeta ensures one refresh per key at a time within this server process. */
 async function replaceAll<T extends object>(
   model: Model<T>,
   docs: T[],

@@ -46,6 +46,7 @@ describe('cachedQuery', () => {
   });
 
   it('serves the stale copy when upstream fails', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const r = await cachedQuery({
       season: 2026,
       load: async () => old,
@@ -56,9 +57,12 @@ describe('cachedQuery', () => {
       now,
     });
     expect(r).toEqual({ data: 'cached', stale: true });
+    expect(warn).toHaveBeenCalledOnce();
+    warn.mockRestore();
   });
 
   it('throws 503 UPSTREAM_UNAVAILABLE when upstream fails and nothing is cached', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
     const p = cachedQuery({
       season: 2026,
       load: async () => null,
@@ -70,5 +74,7 @@ describe('cachedQuery', () => {
     });
     await expect(p).rejects.toMatchObject({ status: 503, code: 'UPSTREAM_UNAVAILABLE' });
     await expect(p).rejects.toBeInstanceOf(AppError);
+    expect(error).toHaveBeenCalledOnce();
+    error.mockRestore();
   });
 });

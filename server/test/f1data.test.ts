@@ -55,6 +55,14 @@ describe('f1data', () => {
     expect(await DriverModel.countDocuments({ season: 2025 })).toBe(5);
   });
 
+  it('shares one refresh between concurrent callers of the same key', async () => {
+    vi.mocked(jolpica.drivers).mockResolvedValue(drivers2025);
+    await f1data.drivers(2025);
+    await CacheMeta.updateOne({ key: 'drivers:2025' }, { $set: { fetchedAt: new Date('2025-06-01T00:00:00Z') } });
+    await Promise.all([f1data.drivers(2025), f1data.drivers(2025)]);
+    expect(jolpica.drivers).toHaveBeenCalledTimes(2); // initial fill + one shared refresh
+  });
+
   it('caches "no results yet" as null', async () => {
     vi.mocked(jolpica.results).mockResolvedValue(null);
     const r = await f1data.results(2026, 30, 'race');
