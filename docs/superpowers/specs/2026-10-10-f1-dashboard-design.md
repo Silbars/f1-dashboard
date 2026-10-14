@@ -27,6 +27,7 @@ Two audiences, in this order:
 - Can register, log in and save a favourite driver/team, which personalises the home page.
 - Head-to-Head and Pit Stops analytics pages work.
 - Tests pass in CI, and the code follows MVC on the server.
+- _Stretch:_ the live track map ran during the US GP (Oct 23–25) and is shown in the demo video.
 - **Submission deliverables** (from the submission form): public GitHub repo, deployed URL reachable by
   evaluators, complete README and project docs, a demo video of the major workflows, and **no API keys,
   credentials or tokens in the repository**.
@@ -39,9 +40,9 @@ Two audiences, in this order:
 | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Group A, core data | Home (next-session countdown, top-10 driver and constructor standings, season progress, fastest pit stop), Schedule, Results (race, sprint, qualifying), Driver Standings, Constructor Standings, Drivers (list and detail), Teams (list and detail) |
 | Group B, partial   | Head-to-Head, Pit Stops                                                                                                                                                                                                                              |
-| Group C, partial   | **Race replay track map** for the **3 most recent Grand Prix weekends**: the Race, plus the Sprint on sprint weekends (up to 6 sessions), streamed over Socket.io. **Stretch goal:** live mode (§6.6), tested at the US GP (Oct 23–25). |
+| Group C, partial   | **Race replay track map** for the **3 most recent Grand Prix weekends**: the Race, plus the Sprint on sprint weekends (up to 6 sessions), streamed over Socket.io. **Stretch goal:** live mode (§6.6), tested at the US GP (Oct 23–25).              |
 | Accounts           | Register, login, logout, favourite driver/team, delete account                                                                                                                                                                                       |
-| Removed            | Gemini AI race summary (only existed to match the syllabus; any stack is now allowed) |
+| Removed            | Gemini AI race summary (only existed to match the syllabus; any stack is now allowed)                                                                                                                                                                |
 
 ### After submission (not in this spec's implementation plan)
 
@@ -65,7 +66,7 @@ Two audiences, in this order:
 | -------------------------------------------------- | --------------------------------------------------------------------------------------------------- | ------------ | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | **Jolpica-F1** (`https://api.jolpi.ca/ergast/f1/`) | Schedule, results, qualifying, sprint, standings, drivers, constructors (1950 onwards)              | Free, no key | 4 req/s burst, 500 req/hour; page size max 100 (default 30) | Docs warn the limits _will decrease_. Must be cached server-side.                                                           |
 | **OpenF1, free** (`https://api.openf1.org/v1/`)    | `sessions`, `drivers`, `laps`, `location`, `position`, `intervals`, `stints`, `pit`, `race_control` | Free         | 3 req/s, 30 req/min                                         | Historical only, 2023 onwards. Data counts as historical from 30 min after a session ends. "Personal / non-commercial use." |
-| **OpenF1, Sponsor**                                | Live data (REST, MQTT, WebSocket)                                                                   | €9.90/month  | 6 req/s, 60 req/min                                         | Post-submission only. Commercial use requires contacting OpenF1.                                                            |
+| **OpenF1, Sponsor**                                | Live data (REST, MQTT, WebSocket)                                                                   | €9.90/month  | 6 req/s, 60 req/min                                         | Only for the live-mode stretch goal (§6.6), October only. Commercial use requires contacting OpenF1.                        |
 
 **Measured:** `GET /location?session_key=9839` for a 60-second window returned **4,480 rows,
 574 KB, 1.5 s** (20 cars × ~3.7 Hz). A 2-hour race is therefore ~120 requests and ~69 MB of raw
@@ -79,26 +80,30 @@ and stored **compressed** (§6.2).
 - Driver identity differs between the two APIs. Jolpica uses `driverId` (e.g. `max_verstappen`);
   OpenF1 uses `driver_number` and `name_acronym`. We match on **number and acronym per season**,
   because numbers change between seasons.
+- F1's own live-timing feed now requires an F1 TV subscription token for car position and
+  telemetry streams (replay archives do not). So live mode uses OpenF1's Sponsor tier, not a
+  self-hosted feed.
 
 ## 4. Stack
 
-The decision was researched on 2026-10-10 against current web sources. Option A was
-chosen: **MERN in TypeScript**.
+The decision was researched on 2026-10-10 and revisited on 2026-10-15 against current web sources
+(alternatives considered: Next.js + Express, Next.js + Hono/Bun + Postgres, React + FastAPI, and
+self-hosting on a laptop). Chosen: **MERN in TypeScript on Render + Atlas** (§10).
 
-| Layer       | Choice                                   | Version (npm, 2026-10-10) | Why                                                                                                                                               |
-| ----------- | ---------------------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Runtime     | Node.js (LTS, `engines: >=24`)           | local v26.7               | Syllabus (MERN-1). Bun was rejected: the relay is a long-running process, where Node's GC is more proven.                                         |
-| Server      | Express 5                                | 5.3.0                     | Syllabus (MERN-2). Framework speed is irrelevant here: upstream limits (30 req/min) are the bottleneck. Express 5 forwards async errors natively. |
-| Database    | MongoDB Atlas M0 + Mongoose              | mongoose 9.11.1           | Syllabus (MERN-3). Free 512 MB, 100 ops/s.                                                                                                        |
-| Real-time   | Socket.io                                | 4.8.4                     | Syllabus (MERN-12/13).                                                                                                                            |
-| Client      | React + Vite + TypeScript                | react 19.3.0, vite 8.3.4  | Tight deadline and existing React skills. Vite over Next.js because SEO doesn't matter yet.                                                       |
-| Client data | TanStack Query, React Router             | —                         | Fetch caching, loading/error states, code splitting (MERN-14).                                                                                    |
-| Styling     | Tailwind CSS                             | —                         | —                                                                                                                                                 |
-| Charts      | Recharts                                 | —                         | Only two chart pages for submission. Revisit for the rest of Group B.                                                                             |
-| Track map   | Canvas 2D, no library                    | —                         | Canvas beats SVG for 20 moving dots (confirmed by a prior OpenF1 replay project).                                                                 |
-| Validation  | zod                                      | 4.6.5                     | Every request body, URL parameter and query string.                                                                                               |
-| Tests       | Vitest, Supertest, mongodb-memory-server | vitest 5.0.3              | —                                                                                                                                                 |
-| Hosting     | One Render free web service + Atlas M0; Docker image for portability | — | See §8. A self-hosted laptop was evaluated (i3-6006U, 3.7 GB RAM, hostel Wi-Fi in another city) and rejected for the evaluator-facing deployment: storage no longer matters with 3-weekend retention, and uptime risk is high. |
+| Layer       | Choice                                                               | Version (npm, 2026-10-10) | Why                                                                                                                                                                                                                            |
+| ----------- | -------------------------------------------------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Runtime     | Node.js (LTS, `engines: >=24`)                                       | local v26.7               | Matches the course. Bun was rejected: the relay is a long-running process, where Node's GC is more proven.                                                                                                                     |
+| Server      | Express 5                                                            | 5.3.0                     | Matches the course. Framework speed is irrelevant here: upstream limits (30 req/min) are the bottleneck. Express 5 forwards async errors natively.                                                                             |
+| Database    | MongoDB Atlas M0 + Mongoose                                          | mongoose 9.11.1           | Matches the course. Atlas free tier: 512 MB, 100 ops/s; enough with 3-weekend retention.                                                                                                                                       |
+| Real-time   | Socket.io                                                            | 4.8.4                     | Replay streaming and the live relay.                                                                                                                                                                                           |
+| Client      | React + Vite + TypeScript                                            | react 19.3.0, vite 8.3.4  | Tight deadline and existing React skills. Vite over Next.js because SEO doesn't matter yet.                                                                                                                                    |
+| Client data | TanStack Query, React Router                                         | —                         | Fetch caching, loading/error states, code splitting.                                                                                                                                                                           |
+| Styling     | Tailwind CSS                                                         | —                         | —                                                                                                                                                                                                                              |
+| Charts      | Recharts                                                             | —                         | Only two chart pages for submission. Revisit for the rest of Group B.                                                                                                                                                          |
+| Track map   | Canvas 2D, no library                                                | —                         | Canvas beats SVG for 20 moving dots (confirmed by a prior OpenF1 replay project).                                                                                                                                              |
+| Validation  | zod                                                                  | 4.6.5                     | Every request body, URL parameter and query string.                                                                                                                                                                            |
+| Tests       | Vitest, Supertest, mongodb-memory-server                             | vitest 5.0.3              | —                                                                                                                                                                                                                              |
+| Hosting     | One Render free web service + Atlas M0; Docker image for portability | —                         | See §8. A self-hosted laptop was evaluated (i3-6006U, 3.7 GB RAM, hostel Wi-Fi in another city) and rejected for the evaluator-facing deployment: storage no longer matters with 3-weekend retention, and uptime risk is high. |
 
 **Repo:** npm workspaces monorepo.
 
@@ -107,12 +112,16 @@ f1_dashboard/
 ├── client/   React + Vite + TS: pages, charts, Canvas track map
 ├── server/   Express + TS, MVC
 ├── shared/   TypeScript types only (Driver, Race, ReplayFrame, …), imported by both sides
-└── docs/
+├── docs/     spec, plan, demo-checklist.md (also the demo video shot list)
+├── .github/workflows/   ci.yml (typecheck, tests, gitleaks), warm.yml (weekly cron)
+├── Dockerfile, docker-compose.yml
+├── .env.example         every env var with placeholder values (.env is git-ignored)
+└── README.md            setup, env vars, architecture, decisions (§10), demo video link
 ```
 
 ## 5. Architecture
 
-### 5.1 Server layout (MVC, MERN-4)
+### 5.1 Server layout (MVC)
 
 ```
 server/src/
@@ -120,9 +129,9 @@ server/src/
 ├── controllers/   races, standings, drivers, teams, analytics, replay, auth, users, home
 ├── routes/        Express routers → controllers
 ├── services/      jolpica.ts, openf1.ts: the ONLY code that calls upstream APIs
-├── sockets/       replay.ts: /replay namespace, ReplayEngine, ChunkStore
+├── sockets/       replay.ts: /replay namespace, ReplayEngine, ChunkStore; live.ts: LiveEngine (stretch)
 ├── middleware/    requireAuth, validate (zod), errorHandler
-├── scripts/       warm.ts: fetches the newest finished race into Mongo and applies retention (§6.2)
+├── scripts/       warm.ts: stores the 3 newest weekends' Race/Sprint replays, applies retention (§6.2)
 └── index.ts       app + http server + Socket.io; serves client/dist in production
 ```
 
@@ -181,16 +190,16 @@ Browser ◀──replay:frames / board / event── ReplayEngine
 
 Every cached model has a `fetchedAt: Date`. Lists are embedded in their parent document.
 
-| Model             | Key fields                                                                                                                                                                                                    | Unique index          |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
-| **User**          | email (lowercased), passwordHash (`select: false`), displayName, favouriteDriverId?, favouriteTeamId?, timestamps                                                                                             | email                 |
-| **Race**          | season, round, name, circuit {id, name, locality, country, lat, long}, sessions [{type, startsAt}], openf1SessionKey?                                                                             | (season, round)       |
-| **RaceResult**    | season, round, type (`race`, `sprint`, `qualifying`), entries [{position, driverId, teamId, grid, laps, status, points, time, fastestLap}]                                                                    | (season, round, type) |
-| **Standings**     | season, afterRound, kind (`driver`, `constructor`), entries [{position, points, wins, driverId or teamId}]                                                                                                    | (season, kind)        |
-| **Driver**        | driverId, code, number, givenName, familyName, nationality, dateOfBirth                                                                                                                                       | driverId              |
-| **Team**          | teamId, name, nationality, colour                                                                                                                                                                             | teamId                |
-| **ReplaySession** | sessionKey, season, round, sessionType, startsAt, endsAt, drivers [{number, acronym, name, teamColour}], trackOutline [[x, y]], positions [], intervals [], stints [], pitStops [], raceControl [], totalLaps | sessionKey            |
-| **ReplayChunk**   | sessionKey, minute, data (Buffer: gzipped compact samples)                                                                                                                                                    | (sessionKey, minute)  |
+| Model             | Key fields                                                                                                                                                                                                                                                | Unique index          |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| **User**          | email (lowercased), passwordHash (`select: false`), displayName, favouriteDriverId?, favouriteTeamId?, timestamps                                                                                                                                         | email                 |
+| **Race**          | season, round, name, circuit {id, name, locality, country, lat, long}, sessions [{type, startsAt}], openf1SessionKey?                                                                                                                                     | (season, round)       |
+| **RaceResult**    | season, round, type (`race`, `sprint`, `qualifying`), entries [{position, driverId, teamId, grid, laps, status, points, time, fastestLap}]                                                                                                                | (season, round, type) |
+| **Standings**     | season, afterRound, kind (`driver`, `constructor`), entries [{position, points, wins, driverId or teamId}]                                                                                                                                                | (season, kind)        |
+| **Driver**        | driverId, code, number, givenName, familyName, nationality, dateOfBirth                                                                                                                                                                                   | driverId              |
+| **Team**          | teamId, name, nationality, colour                                                                                                                                                                                                                         | teamId                |
+| **ReplaySession** | sessionKey, meetingKey, meetingName, season, round, sessionType (`Race`, `Sprint`), startsAt, endsAt, drivers [{number, acronym, name, teamColour}], trackOutline [[x, y]], positions [], intervals [], stints [], pitStops [], raceControl [], totalLaps | sessionKey            |
+| **ReplayChunk**   | sessionKey, minute, data (Buffer: gzipped compact samples)                                                                                                                                                                                                | (sessionKey, minute)  |
 
 - Team colours come from OpenF1's `team_colour` (2023 onwards); earlier seasons fall back to neutral
   grey.
@@ -202,26 +211,26 @@ Every cached model has a `fetchedAt: Date`. Lists are embedded in their parent d
 `:year` is a number from 1950 to the current year, or `current`. All responses are JSON. Errors
 have the shape `{ error: { code, message } }`.
 
-| Method and path                                                             | Auth     | Returns                                                                                                                                                                               |
-| --------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GET /api/health`                                                           | —        | `{ ok: true }`                                                                                                                                                                        |
-| `GET /api/home`                                                             | optional | Next race and session times, top-10 driver and constructor standings, season % complete, fastest pit stop of the season, plus the user's favourite driver/team summary when logged in |
-| `GET /api/seasons/:year/schedule`                                           | —        | Races with session times                                                                                                                                                              |
-| `GET /api/seasons/:year/races/:round/results?type=race\|sprint\|qualifying` | —        | Classification                                                                                                                                                                        |
-| `GET /api/seasons/:year/standings/drivers`                                  | —        | Driver standings                                                                                                                                                                      |
-| `GET /api/seasons/:year/standings/constructors`                             | —        | Constructor standings                                                                                                                                                                 |
-| `GET /api/seasons/:year/drivers` and `/drivers/:driverId`                   | —        | List; detail with season results                                                                                                                                                      |
-| `GET /api/seasons/:year/teams` and `/teams/:teamId`                         | —        | List; detail with drivers and results                                                                                                                                                 |
-| `GET /api/analytics/:year/head-to-head?a=&b=`                               | —        | Race H2H, qualifying H2H, points, wins, podiums, DNFs, per-round finishing gap                                                                                                        |
-| `GET /api/analytics/:year/pit-stops`                                        | —        | Fastest stop per race, average per team (2023+, OpenF1 `pit.stop_duration`)                                                                                                           |
-| `GET /api/replay/sessions` | — | Race and Sprint sessions of the 3 most recent finished Grand Prix weekends, newest first |
-| `POST /api/auth/register`                                                   | —        | Creates user, sets cookie                                                                                                                                                             |
-| `POST /api/auth/login`                                                      | —        | Sets cookie                                                                                                                                                                           |
-| `POST /api/auth/logout`                                                     | —        | Clears cookie                                                                                                                                                                         |
-| `GET /api/auth/me`                                                          | required | Current user                                                                                                                                                                          |
-| `PATCH /api/users/me`                                                       | required | Update displayName and favourites                                                                                                                                                     |
-| `DELETE /api/users/me`                                                      | required | Delete account                                                                                                                                                                        |
-| `POST /api/internal/warm` | `WARM_TOKEN` bearer | Runs the warm job (§6.2); called by the scheduled GitHub Action. 401 without a valid token |
+| Method and path                                                             | Auth                | Returns                                                                                                                                                                               |
+| --------------------------------------------------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/health`                                                           | —                   | `{ ok: true }`                                                                                                                                                                        |
+| `GET /api/home`                                                             | optional            | Next race and session times, top-10 driver and constructor standings, season % complete, fastest pit stop of the season, plus the user's favourite driver/team summary when logged in |
+| `GET /api/seasons/:year/schedule`                                           | —                   | Races with session times                                                                                                                                                              |
+| `GET /api/seasons/:year/races/:round/results?type=race\|sprint\|qualifying` | —                   | Classification                                                                                                                                                                        |
+| `GET /api/seasons/:year/standings/drivers`                                  | —                   | Driver standings                                                                                                                                                                      |
+| `GET /api/seasons/:year/standings/constructors`                             | —                   | Constructor standings                                                                                                                                                                 |
+| `GET /api/seasons/:year/drivers` and `/drivers/:driverId`                   | —                   | List; detail with season results                                                                                                                                                      |
+| `GET /api/seasons/:year/teams` and `/teams/:teamId`                         | —                   | List; detail with drivers and results                                                                                                                                                 |
+| `GET /api/analytics/:year/head-to-head?a=&b=`                               | —                   | Race H2H, qualifying H2H, points, wins, podiums, DNFs, per-round finishing gap                                                                                                        |
+| `GET /api/analytics/:year/pit-stops`                                        | —                   | Fastest stop per race, average per team (2023+, OpenF1 `pit.stop_duration`)                                                                                                           |
+| `GET /api/replay/sessions`                                                  | —                   | Race and Sprint sessions of the 3 most recent finished Grand Prix weekends, newest first                                                                                              |
+| `POST /api/auth/register`                                                   | —                   | Creates user, sets cookie                                                                                                                                                             |
+| `POST /api/auth/login`                                                      | —                   | Sets cookie                                                                                                                                                                           |
+| `POST /api/auth/logout`                                                     | —                   | Clears cookie                                                                                                                                                                         |
+| `GET /api/auth/me`                                                          | required            | Current user                                                                                                                                                                          |
+| `PATCH /api/users/me`                                                       | required            | Update displayName and favourites                                                                                                                                                     |
+| `DELETE /api/users/me`                                                      | required            | Delete account                                                                                                                                                                        |
+| `POST /api/internal/warm`                                                   | `WARM_TOKEN` bearer | Runs the warm job (§6.2); called by the scheduled GitHub Action. 401 without a valid token                                                                                            |
 
 Analytics are computed in the controller from at most ~600 rows per season; no Mongo aggregation
 pipelines.
@@ -242,12 +251,14 @@ pipelines.
    or paused, and the speed. When you press play or change speed, the browser tells the server. The
    server replies with the new clock and keeps sending the next few seconds of car positions ahead
    of time, over Socket.io. The browser just draws whatever "now" is.
-5. **Why not download the whole race?** A full race is ~69 MB, and OpenF1 only allows 30 requests a
-   minute. So the server fetches one minute at a time, just ahead of playback, and saves each minute
-   (compressed) in MongoDB so it is never fetched twice.
+5. **Where the data comes from.** A full race is ~69 MB, and OpenF1 only allows 30 requests a
+   minute, so it takes about 4 minutes to download. Once a week, a scheduled job downloads the Race
+   and Sprint of the 3 newest weekends minute by minute, compresses each minute and saves it in
+   MongoDB. Older weekends are deleted. If a minute is ever missing, the server fetches it just
+   ahead of playback.
 6. **The leaderboard.** OpenF1 also records race position, gaps and tyres over time. The server
    works out the order at "now" and sends it to the browser about once a second.
-7. **Live mode later.** In a live race, "now" is simply "the newest data minus 2 seconds". The
+7. **Live mode (stretch goal).** In a live race, "now" is simply "the newest data minus 2 seconds". The
    drawing code stays the same.
 
 ### 6.1 Rendering principle
@@ -255,7 +266,7 @@ pipelines.
 The client always renders cars at a `renderTime` by interpolating buffered timestamped samples.
 
 - **Replay:** `renderTime = state.t + (Date.now() - state.serverNow) * state.speed` while playing.
-- **Live (later):** `renderTime = newestSampleTime - 2000 ms`.
+- **Live (stretch, §6.6):** `renderTime = newestSampleTime - 2000 ms`.
 
 ### 6.2 Server: `sockets/replay.ts` (`/replay` namespace)
 
@@ -271,7 +282,7 @@ The client always renders cars at a `renderTime` by interpolating buffered times
   across sockets.
 - **Chunk encoding:** rows reduced to `[driverNumber, tOffsetMs, x, y]`, JSON, then gzip
   (`node:zlib`). Estimated 2–7 MB per race, to be **measured on the first ingested race**.
-- **Metadata ingest:** on the first `replay:join` for a session, ~9 OpenF1 calls: `drivers`, `laps`,
+- **Metadata ingest:** done by the warm job (or on the first `replay:join` if missing), ~9 OpenF1 calls: `drivers`, `laps`,
   `position`, `intervals`, `stints`, `race_control`, `pit`, plus one track-outline call. Stored in
   ReplaySession.
 - **Track outline:** take the fastest-lap driver's lap with `is_pit_out_lap = false`, then fetch
@@ -283,26 +294,27 @@ The client always renders cars at a `renderTime` by interpolating buffered times
   2. Ingest their metadata and **all** their chunks, respecting the OpenF1 rate limit (~4 min per
      race, ~1.5 min per sprint).
   3. Delete `ReplaySession`s (and their `ReplayChunk`s) from older weekends.
-  - Idempotent: if the newest race is already stored, it does nothing.
+  - Idempotent: sessions already stored are skipped; running it twice changes nothing.
   - A replay viewer can still trigger on-demand fetching (above) if a chunk is missing.
 - **Start point:** the earliest lap-1 `date_start`, falling back to the session's `date_start`.
   Verify at build time that lap 1's `date_start` is present.
 
 ### 6.3 Socket events
 
-| Event                          | Direction | Payload                                                          |
-| ------------------------------ | --------- | ---------------------------------------------------------------- |
-| `replay:join`                  | C → S     | `{ sessionKey }`                                                 |
-| `replay:meta`                  | S → C     | `{ drivers, trackOutline, startsAt, endsAt, totalLaps }`         |
-| `replay:play` / `replay:pause` | C → S     | —                                                                |
-| `replay:seek`                  | C → S     | `{ t }`                                                          |
-| `replay:speed`                 | C → S     | `{ x: 1 \| 2 \| 4 \| 8 \| 16 }`                                  |
-| `replay:state`                 | S → C     | `{ playing, speed, t, serverNow }`, sent on every control change |
-| `replay:frames`                | S → C     | `{ samples: [{ n, t, x, y }] }`                                  |
-| `replay:board`                 | S → C     | `{ t, lap, rows: [{ n, position, gap, interval, compound }] }`   |
-| `replay:event`                 | S → C     | `{ t, category, flag, message }`                                 |
-| `replay:buffering`             | S → C     | `{ on }`                                                         |
-| `replay:error`                 | S → C     | `{ code, message }`                                              |
+| Event                          | Direction | Payload                                                                                          |
+| ------------------------------ | --------- | ------------------------------------------------------------------------------------------------ |
+| `replay:join`                  | C → S     | `{ sessionKey }`                                                                                 |
+| `replay:meta`                  | S → C     | `{ drivers, trackOutline, startsAt, endsAt, totalLaps }`                                         |
+| `replay:play` / `replay:pause` | C → S     | —                                                                                                |
+| `replay:seek`                  | C → S     | `{ t }`                                                                                          |
+| `replay:speed`                 | C → S     | `{ x: 1 \| 2 \| 4 \| 8 \| 16 }`                                                                  |
+| `replay:state`                 | S → C     | `{ playing, speed, t, serverNow }`, sent on every control change                                 |
+| `replay:frames`                | S → C     | `{ samples: [{ n, t, x, y }] }`                                                                  |
+| `replay:board`                 | S → C     | `{ t, lap, rows: [{ n, position, gap, interval, compound }] }`                                   |
+| `replay:event`                 | S → C     | `{ t, category, flag, message }`                                                                 |
+| `replay:buffering`             | S → C     | `{ on }`                                                                                         |
+| `replay:error`                 | S → C     | `{ code, message }`                                                                              |
+| `live:join` _(stretch)_        | C → S     | `{ sessionKey }`; joins the live room, then the same `meta`, `frames`, `board`, `event` messages |
 
 All client → server payloads are validated with zod. Invalid input gets `replay:error`.
 
@@ -354,7 +366,7 @@ All client → server payloads are validated with zod. Invalid input gets `repla
 
 ## 7. Auth, security and error handling
 
-### 7.1 Auth (MERN-7/8)
+### 7.1 Auth
 
 - **Passwords:** `bcryptjs`, minimum 8 characters, email lowercased and validated.
 - **JWT:**
@@ -395,11 +407,13 @@ All client → server payloads are validated with zod. Invalid input gets `repla
     on sleep, 750 instance-hours/month.
 - **MongoDB Atlas M0:** 512 MB. Network access must be `0.0.0.0/0` because Render free has no static
   IP, so use a strong generated DB password.
-- **Environment variables:** `MONGODB_URI`, `JWT_SECRET`, `WARM_TOKEN`, `NODE_ENV`,
-  `PORT`.
+- **Environment variables:** `MONGODB_URI`, `JWT_SECRET`, `WARM_TOKEN`, `NODE_ENV`, `PORT`; for
+  live mode only, `OPENF1_USERNAME` and `OPENF1_PASSWORD`.
 - **Demo prep:**
   - Confirm `GET /api/replay/sessions` lists the 3 weekends' sessions and each replays end to end (the warm job pre-fetches them).
   - Open the site ~2 min before the demo to wake Render.
+  - Record the demo video from `docs/demo-checklist.md`; if live mode works, record the live map
+    during the US GP race (Oct 25).
 - **CI (GitHub Actions):** on push, `npm ci`, typecheck, `npm test`, and a **gitleaks** secret scan
   that fails the build if a key or token is committed.
 - **Scheduled warm job (GitHub Actions cron):** Mondays and Tuesdays 06:00 UTC, `curl -X POST` to
@@ -426,6 +440,8 @@ All client → server payloads are validated with zod. Invalid input gets `repla
   mocked by **saved real API responses** stored under `server/test/fixtures/`.
 - **Auth:** register, login, `/me`, 401 without cookie, logout, delete account.
 - **Socket:** join → meta, play → frames, seek → state, against fixture chunks.
+- **Live (stretch):** `LiveEngine` driven by a recorded file of OpenF1 live messages emits the same
+  `frames`/`board` events.
 - **Retention:** warming a 4th weekend deletes the oldest weekend's `ReplaySession` and `ReplayChunk`s;
   the warm job is idempotent (running it twice changes nothing).
 - **Manual demo checklist** in `docs/demo-checklist.md`, in place of E2E tests. It doubles as the
@@ -433,26 +449,30 @@ All client → server payloads are validated with zod. Invalid input gets `repla
 
 ## 10. Engineering decisions (for the README)
 
-| Decision | Why |
-|---|---|
-| MERN in TypeScript | Any stack was allowed; the user knows MERN from the course and can explain it. Measured bottleneck is OpenF1 (30 req/min, 1.5 s per location request), not the framework or runtime. |
-| Node over Bun | The relay is a long-running process; Node's GC is more proven there. |
-| Vite SPA over Next.js | Tight deadline; SEO not needed yet. |
-| One Render service, same origin | First-party auth cookie; Socket.io works without a proxy. Vercel rewrites don't proxy Socket.io. |
-| Cache in Mongo, fetch on request | Upstream rate limits; Render free sleeps, so no reliable schedulers on the server. |
-| Compressed minute chunks, 3-weekend retention | A race is ~69 MB raw; compressed and limited to 3 weekends (≤ 6 sessions) it stays far under Atlas's 512 MB. |
-| Canvas for the track map | 20 moving dots at 60 fps; DOM table as the accessible equivalent. |
-| Cloud over the self-hosted laptop | Evaluator uptime matters more than no cold starts; Docker keeps self-hosting possible later. |
+| Decision                                      | Why                                                                                                                                                                                  |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| MERN in TypeScript                            | Any stack was allowed; the user knows MERN from the course and can explain it. Measured bottleneck is OpenF1 (30 req/min, 1.5 s per location request), not the framework or runtime. |
+| Node over Bun                                 | The relay is a long-running process; Node's GC is more proven there.                                                                                                                 |
+| Vite SPA over Next.js                         | Tight deadline; SEO not needed yet.                                                                                                                                                  |
+| One Render service, same origin               | First-party auth cookie; Socket.io works without a proxy. Vercel rewrites don't proxy Socket.io.                                                                                     |
+| Cache in Mongo, fetch on request              | Upstream rate limits; Render free sleeps, so no reliable schedulers on the server.                                                                                                   |
+| Weekly warm job from GitHub Actions           | The only scheduled work; runs off-server and wakes Render over HTTP.                                                                                                                 |
+| Compressed minute chunks, 3-weekend retention | A race is ~69 MB raw; compressed and limited to 3 weekends (≤ 6 sessions) it stays far under Atlas's 512 MB.                                                                         |
+| Canvas for the track map                      | 20 moving dots at 60 fps; DOM table as the accessible equivalent.                                                                                                                    |
+| Cloud over the self-hosted laptop             | Evaluator uptime matters more than no cold starts; Docker keeps self-hosting possible later.                                                                                         |
+| Live data from OpenF1 Sponsor tier            | F1's own live feed needs an F1 TV token for positions; €9.90 for one month, non-commercial.                                                                                          |
+| No Gemini, no Cloudinary                      | Only needed to match the syllabus; any stack is allowed and the app has no uploads.                                                                                                  |
 
 ## 11. Risks and open items
 
-| Risk                                                   | Mitigation                                                                                                              |
-| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
-| 12 days left (as of Oct 15) | Fixed scope (§2). Live mode is a stretch goal with an Oct 22 cut-off. Replay is built in visible steps, so a partial replay is still demoable. |
-| OpenF1 or Jolpica down or rate-limited during the demo | All 3 replays pre-warmed into Atlas; stale-cache fallback. |
-| Render cold start during the demo                      | Wake the site 2 min early; "Waking up the server…" UI.                                                                  |
-| Atlas 512 MB filling up | 3-weekend retention (§6.2); measure per-race size on the first ingest. |
-| OpenF1 commercial terms                                | Stay non-commercial. Contact OpenF1 before any ads or subscriptions.                                                    |
-| Unverified data assumptions                            | Check at build time: `(0, 0)` samples, presence of lap 1 `date_start`, actual chunk size.                               |
-| Secrets leaked into the repo | `.env` git-ignored, `.env.example`, gitleaks in CI (§8). |
-| Demo video missing a workflow | `docs/demo-checklist.md` is the shot list (§9). |
+| Risk                                                   | Mitigation                                                                                                                                     |
+| ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| 12 days left (as of Oct 15)                            | Fixed scope (§2). Live mode is a stretch goal with an Oct 22 cut-off. Replay is built in visible steps, so a partial replay is still demoable. |
+| OpenF1 or Jolpica down or rate-limited during the demo | All 3 replays pre-warmed into Atlas; stale-cache fallback.                                                                                     |
+| Render cold start during the demo                      | Wake the site 2 min early; "Waking up the server…" UI.                                                                                         |
+| Atlas 512 MB filling up                                | 3-weekend retention (§6.2); measure per-race size on the first ingest.                                                                         |
+| OpenF1 commercial terms                                | Stay non-commercial. Contact OpenF1 before any ads or subscriptions.                                                                           |
+| Unverified data assumptions                            | Check at build time: `(0, 0)` samples, presence of lap 1 `date_start`, actual chunk size.                                                      |
+| Secrets leaked into the repo                           | `.env` git-ignored, `.env.example`, gitleaks in CI (§8).                                                                                       |
+| Demo video missing a workflow                          | `docs/demo-checklist.md` is the shot list (§9).                                                                                                |
+| Live mode gets only one real test (Austin)             | Develop against recorded live messages; Oct 22 cut-off; replay already demos the map.                                                          |
