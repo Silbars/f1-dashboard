@@ -128,17 +128,48 @@ server/src/
 
 ### 5.2 Data flow and caching
 
+**A. REST pages (schedule, results, standings, drivers, teams, analytics)**
+
 ```
-Browser ──REST──▶ controller ──▶ MongoDB (cache)
-                                  │ missing or stale?
-                                  ▼
-                   services/jolpica|openf1 ──▶ upstream API
-                   (per-service rate-limited queue) ◀── upsert into Mongo, return
-Browser ◀─Socket.io── sockets/replay ◀── ReplayChunk (Mongo) ◀── OpenF1 /location
+Browser ──GET /api/...──▶ controller ──▶ MongoDB: cached doc?
+                                            │
+              ┌─────────────────────────────┼──────────────────────────────┐
+              │ fresh                       │ missing or stale             │
+              ▼                             ▼                              │
+      return cached doc        service (jolpica.ts / openf1.ts)            │
+                               rate-limited queue + in-flight dedup        │
+                                            │                              │
+                                            ▼                              │
+                                 Jolpica / OpenF1 API                      │
+                                            │                              │
+                         ┌──────────────────┴─────────────────┐            │
+                         │ success                            │ failure    │
+                         ▼                                    ▼            │
+              upsert into Mongo (fetchedAt = now)   stale doc exists?      │
+              return fresh doc                      ├─ yes → return it with │
+                                                    │   X-Data-Stale: true  │
+                                                    └─ no  → 503 UPSTREAM_UNAVAILABLE
 ```
 
-- **Fetched on request, not on a schedule.** Render free sleeps, so scheduled jobs would not run
-  reliably.
+**B. Replay (frames over Socket.io) and the weekly warm job**
+
+```
+GitHub Actions cron (Mon/Tue) ──POST /api/internal/warm (WARM_TOKEN)──▶ warm job
+   warm job: fetch Race + Sprint of the 3 newest weekends ──▶ OpenF1 ──▶ Mongo ReplaySession + ReplayChunk
+             delete sessions from older weekends (retention)
+
+Browser ──replay:join / play / seek──▶ ReplayEngine (one per socket)
+   ReplayEngine needs minute m ──▶ ChunkStore:
+        1. in-memory cache (~50 chunks)        hit → use
+        2. Mongo ReplayChunk                   hit → load into memory, use
+        3. OpenF1 /location (60 s window)      miss → fetch via queue, gzip, save to Mongo, use
+                                                (only if the warm job hasn't stored it yet)
+Browser ◀──replay:frames / board / event── ReplayEngine
+```
+
+- **Pages are fetched on request.** Render free sleeps, so the server can't run its own scheduled
+  jobs. The only scheduled work is the replay warm job, which runs from **GitHub Actions** and
+  reaches the server over HTTP (this also wakes it).
 - **Staleness rule:** documents for past seasons never go stale. Current-season documents are stale
   when `now - fetchedAt > 1 hour`.
 - **Rate-limited queue per service:** Jolpica ≤ 4/s and ≤ 500/h; OpenF1 ≤ 3/s and ≤ 30/min. On 429:
