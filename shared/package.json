@@ -1,0 +1,6 @@
+{
+  "name": "@f1/shared",
+  "private": true,
+  "type": "module",
+  "exports": { ".": { "types": "./src/index.ts" } }
+}

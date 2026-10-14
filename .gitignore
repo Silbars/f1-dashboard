@@ -1,0 +1,7 @@
+node_modules/
+client/dist/
+coverage/
+.env
+.DS_Store
+.claude/worktrees/
+.superpowers/
