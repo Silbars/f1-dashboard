@@ -22,7 +22,7 @@ Two audiences, in this order:
 
 - A deployed URL on which an evaluator can browse schedule, results, standings, drivers and teams for
   any season.
-- Can replay any of the **3 most recent Grands Prix** with all cars moving on the track map, a live-updating
+- Can replay the Race (and Sprint, where held) of any of the **3 most recent Grand Prix weekends** with all cars moving on the track map, a live-updating
   leaderboard and play/pause/seek/speed controls.
 - Can register, log in and save a favourite driver/team, which personalises the home page.
 - Head-to-Head and Pit Stops analytics pages work.
@@ -39,7 +39,7 @@ Two audiences, in this order:
 | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Group A, core data | Home (next-session countdown, top-10 driver and constructor standings, season progress, fastest pit stop), Schedule, Results (race, sprint, qualifying), Driver Standings, Constructor Standings, Drivers (list and detail), Teams (list and detail) |
 | Group B, partial   | Head-to-Head, Pit Stops                                                                                                                                                                                                                              |
-| Group C, partial   | **Race replay track map** for the **3 most recent Grands Prix** (Race sessions only), streamed over Socket.io. **Stretch goal:** live mode (§6.6), tested at the US GP (Oct 23–25). |
+| Group C, partial   | **Race replay track map** for the **3 most recent Grand Prix weekends**: the Race, plus the Sprint on sprint weekends (up to 6 sessions), streamed over Socket.io. **Stretch goal:** live mode (§6.6), tested at the US GP (Oct 23–25). |
 | Accounts           | Register, login, logout, favourite driver/team, delete account                                                                                                                                                                                       |
 | Removed            | Gemini AI race summary (only existed to match the syllabus; any stack is now allowed) |
 
@@ -47,14 +47,14 @@ Two audiences, in this order:
 
 - Rest of Group B: Driver Stats, Consistency, Race Pace, Track DNA.
 - Live mode, if the stretch goal (§6.6) is not finished by Oct 22.
-- Replays of older races and sprints (retention is fixed at 3 races for now).
+- Replays of older weekends (retention is fixed at 3 weekends for now).
 - A move to Next.js, if SEO becomes important.
 
 ### Out of scope
 
 - Group D (tech updates, used power-unit elements, crash-damage costs, records feed). No API exists
   for these, so they would mean entering data by hand every race weekend.
-- Practice, qualifying and sprint replays, watch-party rooms, per-circuit map rotation, hover tooltips on
+- Practice and qualifying replays, watch-party rooms, per-circuit map rotation, hover tooltips on
   cars.
 - Redux, Redis, a separate job runner, Playwright E2E tests.
 - F1 or team logos and branding (trademark risk).
@@ -98,7 +98,7 @@ chosen: **MERN in TypeScript**.
 | Track map   | Canvas 2D, no library                    | —                         | Canvas beats SVG for 20 moving dots (confirmed by a prior OpenF1 replay project).                                                                 |
 | Validation  | zod                                      | 4.6.5                     | Every request body, URL parameter and query string.                                                                                               |
 | Tests       | Vitest, Supertest, mongodb-memory-server | vitest 5.0.3              | —                                                                                                                                                 |
-| Hosting     | One Render free web service + Atlas M0; Docker image for portability | — | See §8. A self-hosted laptop was evaluated (i3-6006U, 3.7 GB RAM, hostel Wi-Fi in another city) and rejected for the evaluator-facing deployment: storage no longer matters with 3-race retention, and uptime risk is high. |
+| Hosting     | One Render free web service + Atlas M0; Docker image for portability | — | See §8. A self-hosted laptop was evaluated (i3-6006U, 3.7 GB RAM, hostel Wi-Fi in another city) and rejected for the evaluator-facing deployment: storage no longer matters with 3-weekend retention, and uptime risk is high. |
 
 **Repo:** npm workspaces monorepo.
 
@@ -183,7 +183,7 @@ have the shape `{ error: { code, message } }`.
 | `GET /api/seasons/:year/teams` and `/teams/:teamId`                         | —        | List; detail with drivers and results                                                                                                                                                 |
 | `GET /api/analytics/:year/head-to-head?a=&b=`                               | —        | Race H2H, qualifying H2H, points, wins, podiums, DNFs, per-round finishing gap                                                                                                        |
 | `GET /api/analytics/:year/pit-stops`                                        | —        | Fastest stop per race, average per team (2023+, OpenF1 `pit.stop_duration`)                                                                                                           |
-| `GET /api/replay/sessions` | — | The 3 most recent finished Grand Prix Race sessions, newest first |
+| `GET /api/replay/sessions` | — | Race and Sprint sessions of the 3 most recent finished Grand Prix weekends, newest first |
 | `POST /api/auth/register`                                                   | —        | Creates user, sets cookie                                                                                                                                                             |
 | `POST /api/auth/login`                                                      | —        | Sets cookie                                                                                                                                                                           |
 | `POST /api/auth/logout`                                                     | —        | Clears cookie                                                                                                                                                                         |
@@ -247,9 +247,11 @@ The client always renders cars at a `renderTime` by interpolating buffered times
   `/location?driver_number=N` from that lap's `date_start` to the next lap's `date_start`
   (~330 points).
 - **Warm job and retention** (`scripts/warm.ts`, also exposed as `POST /api/internal/warm`):
-  1. Find the newest finished Grand Prix Race session (`date_end` in the past) not yet stored.
-  2. Ingest its metadata and **all** its chunks, respecting the OpenF1 rate limit (~4 min per race).
-  3. Keep the 3 newest `ReplaySession`s and delete the rest, including their `ReplayChunk`s.
+  1. Find finished Race and Sprint sessions (`date_end` in the past) of the 3 most recent Grand Prix
+     weekends (by `meeting_key`) that are not yet stored.
+  2. Ingest their metadata and **all** their chunks, respecting the OpenF1 rate limit (~4 min per
+     race, ~1.5 min per sprint).
+  3. Delete `ReplaySession`s (and their `ReplayChunk`s) from older weekends.
   - Idempotent: if the newest race is already stored, it does nothing.
   - A replay viewer can still trigger on-demand fetching (above) if a chunk is missing.
 - **Start point:** the earliest lap-1 `date_start`, falling back to the session's `date_start`.
@@ -275,7 +277,8 @@ All client → server payloads are validated with zod. Invalid input gets `repla
 
 ### 6.4 Client: `client/src/features/replay/`
 
-- **Picker page `/replay`:** lists the 3 most recent Grands Prix (from `GET /api/replay/sessions`).
+- **Picker page `/replay`:** lists the 3 most recent weekends, each with its Race and, where held, Sprint (from
+  `GET /api/replay/sessions`).
 - **Layout:** Canvas track map (left/top on mobile), leaderboard table (right/below), race-control
   banner (flag colour and latest message, current lap), transport bar (play/pause, 1×–16×, scrubber,
   session clock).
@@ -364,7 +367,7 @@ All client → server payloads are validated with zod. Invalid input gets `repla
 - **Environment variables:** `MONGODB_URI`, `JWT_SECRET`, `WARM_TOKEN`, `NODE_ENV`,
   `PORT`.
 - **Demo prep:**
-  - Confirm `GET /api/replay/sessions` lists 3 races and each replays end to end (the warm job pre-fetches them).
+  - Confirm `GET /api/replay/sessions` lists the 3 weekends' sessions and each replays end to end (the warm job pre-fetches them).
   - Open the site ~2 min before the demo to wake Render.
 - **CI (GitHub Actions):** on push, `npm ci`, typecheck, `npm test`, and a **gitleaks** secret scan
   that fails the build if a key or token is committed.
@@ -392,7 +395,7 @@ All client → server payloads are validated with zod. Invalid input gets `repla
   mocked by **saved real API responses** stored under `server/test/fixtures/`.
 - **Auth:** register, login, `/me`, 401 without cookie, logout, delete account.
 - **Socket:** join → meta, play → frames, seek → state, against fixture chunks.
-- **Retention:** warming a 4th race deletes the oldest race's `ReplaySession` and `ReplayChunk`s;
+- **Retention:** warming a 4th weekend deletes the oldest weekend's `ReplaySession` and `ReplayChunk`s;
   the warm job is idempotent (running it twice changes nothing).
 - **Manual demo checklist** in `docs/demo-checklist.md`, in place of E2E tests. It doubles as the
   shot list for the demo video.
@@ -406,7 +409,7 @@ All client → server payloads are validated with zod. Invalid input gets `repla
 | Vite SPA over Next.js | Tight deadline; SEO not needed yet. |
 | One Render service, same origin | First-party auth cookie; Socket.io works without a proxy. Vercel rewrites don't proxy Socket.io. |
 | Cache in Mongo, fetch on request | Upstream rate limits; Render free sleeps, so no reliable schedulers on the server. |
-| Compressed minute chunks, 3-race retention | A race is ~69 MB raw; compressed and limited to 3 races it stays far under Atlas's 512 MB. |
+| Compressed minute chunks, 3-weekend retention | A race is ~69 MB raw; compressed and limited to 3 weekends (≤ 6 sessions) it stays far under Atlas's 512 MB. |
 | Canvas for the track map | 20 moving dots at 60 fps; DOM table as the accessible equivalent. |
 | Cloud over the self-hosted laptop | Evaluator uptime matters more than no cold starts; Docker keeps self-hosting possible later. |
 
@@ -417,7 +420,7 @@ All client → server payloads are validated with zod. Invalid input gets `repla
 | 12 days left (as of Oct 15) | Fixed scope (§2). Live mode is a stretch goal with an Oct 22 cut-off. Replay is built in visible steps, so a partial replay is still demoable. |
 | OpenF1 or Jolpica down or rate-limited during the demo | All 3 replays pre-warmed into Atlas; stale-cache fallback. |
 | Render cold start during the demo                      | Wake the site 2 min early; "Waking up the server…" UI.                                                                  |
-| Atlas 512 MB filling up | 3-race retention (§6.2); measure per-race size on the first ingest. |
+| Atlas 512 MB filling up | 3-weekend retention (§6.2); measure per-race size on the first ingest. |
 | OpenF1 commercial terms                                | Stay non-commercial. Contact OpenF1 before any ads or subscriptions.                                                    |
 | Unverified data assumptions                            | Check at build time: `(0, 0)` samples, presence of lap 1 `date_start`, actual chunk size.                               |
 | Secrets leaked into the repo | `.env` git-ignored, `.env.example`, gitleaks in CI (§8). |
