@@ -3,6 +3,7 @@ import express from 'express';
 import helmet from 'helmet';
 import { config } from './config.ts';
 import { errorHandler, notFound } from './middleware/errorHandler.ts';
+import { seasonsRouter } from './routes/seasons.ts';
 
 export function createApp(_opts: { clientDir?: string } = {}) {
   const app = express();
@@ -15,6 +16,8 @@ export function createApp(_opts: { clientDir?: string } = {}) {
   app.get('/api/health', (_req, res) => {
     res.json({ ok: true });
   });
+
+  app.use('/api/seasons', seasonsRouter());
 
   app.use('/api', notFound);
   app.use(errorHandler);
