@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import { config } from './config.ts';
 import { errorHandler, notFound } from './middleware/errorHandler.ts';
 import { authRouter } from './routes/auth.ts';
+import { homeRouter } from './routes/home.ts';
 import { seasonsRouter } from './routes/seasons.ts';
 import { usersRouter } from './routes/users.ts';
 
@@ -22,6 +23,7 @@ export function createApp(_opts: { clientDir?: string } = {}) {
   app.use('/api/seasons', seasonsRouter());
   app.use('/api/auth', authRouter());
   app.use('/api/users', usersRouter());
+  app.use('/api/home', homeRouter());
 
   app.use('/api', notFound);
   app.use(errorHandler);
