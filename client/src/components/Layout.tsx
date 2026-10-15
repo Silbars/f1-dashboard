@@ -1,9 +1,9 @@
 import { useIsFetching, useMutation, useQueryClient } from '@tanstack/react-query';
 import { type ReactNode, Suspense, useEffect, useState } from 'react';
-import { Link, NavLink, Outlet, useNavigate } from 'react-router';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 import { api } from '../lib/api';
 import { useMe } from '../lib/useMe';
-import { Loading } from './States';
+import { Loading, PageErrorBoundary } from './States';
 
 const NAV = [
   ['/', 'Home'],
@@ -68,6 +68,7 @@ export function AccountMenu() {
 }
 
 export function Layout({ account }: { account?: ReactNode }) {
+  const { pathname } = useLocation();
   return (
     <div className="flex min-h-screen flex-col">
       <header className="border-b border-zinc-800">
@@ -88,9 +89,11 @@ export function Layout({ account }: { account?: ReactNode }) {
       </header>
       <WakingBanner />
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
-        <Suspense fallback={<Loading />}>
-          <Outlet />
-        </Suspense>
+        <PageErrorBoundary key={pathname}>
+          <Suspense fallback={<Loading />}>
+            <Outlet />
+          </Suspense>
+        </PageErrorBoundary>
       </main>
       <footer className="border-t border-zinc-800 px-4 py-6 text-center text-xs text-zinc-400">
         Unofficial fan project. Not associated with Formula 1, the FIA or Formula One Management.

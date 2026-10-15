@@ -1,5 +1,5 @@
 import type { UseQueryResult } from '@tanstack/react-query';
-import type { ReactNode } from 'react';
+import { Component, type ReactNode } from 'react';
 import type { ApiResult } from '../lib/api';
 
 export function PageHeader({ title, children }: { title: string; children?: ReactNode }) {
@@ -36,6 +36,24 @@ export function Loading() {
       Loading…
     </p>
   );
+}
+
+/** Catches render and lazy-chunk errors so the nav and footer survive (e.g. a stale tab after a redeploy). */
+export class PageErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  state = { error: null as Error | null };
+
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+
+  componentDidCatch(error: Error) {
+    console.error(error);
+  }
+
+  render() {
+    if (this.state.error) return <ErrorState error={this.state.error} onRetry={() => window.location.reload()} />;
+    return this.props.children;
+  }
 }
 
 export function QueryState<T>({ q, children }: { q: UseQueryResult<ApiResult<T>, Error>; children: (data: T, stale: boolean) => ReactNode }) {
