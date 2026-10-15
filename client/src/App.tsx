@@ -2,6 +2,7 @@ import { lazy } from 'react';
 import { Route, Routes } from 'react-router';
 import { Layout } from './components/Layout';
 
+const HomePage = lazy(() => import('./pages/HomePage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const SchedulePage = lazy(() => import('./pages/SchedulePage'));
 const ResultsPage = lazy(() => import('./pages/ResultsPage'));
@@ -15,6 +16,7 @@ export function App() {
   return (
     <Routes>
       <Route element={<Layout />}>
+        <Route index element={<HomePage />} />
         <Route path="schedule" element={<SchedulePage />} />
         <Route path="results/:season/:round" element={<ResultsPage />} />
         <Route path="standings/drivers" element={<StandingsPage kind="drivers" />} />
