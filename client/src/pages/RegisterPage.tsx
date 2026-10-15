@@ -12,8 +12,9 @@ export default function RegisterPage() {
   const set = (k: keyof typeof form) => (e: ChangeEvent<HTMLInputElement>) => setForm({ ...form, [k]: e.target.value });
   const register = useMutation({
     mutationFn: () => api.post<{ user: PublicUser }>('/auth/register', form),
-    onSuccess: ({ data }) => {
+    onSuccess: async ({ data }) => {
       qc.setQueryData(['me'], data.user);
+      await qc.invalidateQueries({ queryKey: ['/home'] });
       navigate('/profile');
     },
   });

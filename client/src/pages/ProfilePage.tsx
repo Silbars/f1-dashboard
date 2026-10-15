@@ -80,13 +80,17 @@ export default function ProfilePage() {
       <div className="border-t border-zinc-800 pt-6">
         <button
           type="button"
-          className="rounded border border-red-800 px-3 py-2 text-sm text-red-400 hover:bg-red-950"
+          className="rounded border border-red-800 px-3 py-2 text-sm text-red-400 hover:bg-red-950 disabled:opacity-50"
+          disabled={remove.isPending}
           onClick={() => {
             if (confirm('Delete your account? This cannot be undone.')) remove.mutate();
           }}
         >
-          Delete my account
+          {remove.isPending ? 'Deleting…' : 'Delete my account'}
         </button>
+        <p role="alert" aria-live="polite" className="mt-2 min-h-5 text-sm text-red-400">
+          {remove.error?.message}
+        </p>
       </div>
     </section>
   );

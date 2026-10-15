@@ -1,4 +1,4 @@
-import { useIsFetching, useQueryClient } from '@tanstack/react-query';
+import { useIsFetching, useMutation, useQueryClient } from '@tanstack/react-query';
 import { type ReactNode, Suspense, useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router';
 import { api } from '../lib/api';
@@ -35,6 +35,14 @@ export function AccountMenu() {
   const me = useMe();
   const qc = useQueryClient();
   const navigate = useNavigate();
+  const logout = useMutation({
+    mutationFn: () => api.post('/auth/logout'),
+    onSuccess: async () => {
+      qc.setQueryData(['me'], null);
+      await qc.invalidateQueries({ queryKey: ['/home'] });
+      navigate('/');
+    },
+  });
   if (me.isPending) return null;
   if (!me.data)
     return (
@@ -47,18 +55,14 @@ export function AccountMenu() {
       <Link to="/profile" className="hover:underline">
         {me.data.displayName}
       </Link>
-      <button
-        type="button"
-        className="text-zinc-400 hover:text-white"
-        onClick={async () => {
-          await api.post('/auth/logout');
-          qc.setQueryData(['me'], null);
-          await qc.invalidateQueries({ queryKey: ['/home'] });
-          navigate('/');
-        }}
-      >
+      <button type="button" className="text-zinc-400 hover:text-white disabled:opacity-50" disabled={logout.isPending} onClick={() => logout.mutate()}>
         Log out
       </button>
+      {logout.isError && (
+        <span role="alert" className="text-xs text-red-400">
+          {logout.error.message}
+        </span>
+      )}
     </span>
   );
 }
