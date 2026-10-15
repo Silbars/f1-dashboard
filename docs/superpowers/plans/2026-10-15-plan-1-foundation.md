@@ -4394,17 +4394,16 @@ Expected: FAIL (`/assets/app.js` returns 404).
 
 - [ ] **Step 3: Implement static serving**
 
-In `server/src/app.ts`: add `import path from 'node:path';`, rename `_opts` to `opts`, and between `app.use('/api', notFound);` and `app.use(errorHandler);` insert:
+In `server/src/app.ts`: rename `_opts` to `opts`, and between `app.use('/api', notFound);` and `app.use(errorHandler);` insert:
 ```ts
   if (opts.clientDir) {
     const clientDir = opts.clientDir;
     app.use(express.static(clientDir, { index: false, maxAge: '1h' }));
-    app.get('/{*splat}', (_req, res) => res.sendFile(path.join(clientDir, 'index.html')));
+    app.get('/{*splat}', (_req, res) => res.sendFile('index.html', { root: clientDir }));
   }
 ```
 The final `server/src/app.ts` reads:
 ```ts
-import path from 'node:path';
 import cookieParser from 'cookie-parser';
 import express from 'express';
 import helmet from 'helmet';
@@ -4435,7 +4434,7 @@ export function createApp(opts: { clientDir?: string } = {}) {
   if (opts.clientDir) {
     const clientDir = opts.clientDir;
     app.use(express.static(clientDir, { index: false, maxAge: '1h' }));
-    app.get('/{*splat}', (_req, res) => res.sendFile(path.join(clientDir, 'index.html')));
+    app.get('/{*splat}', (_req, res) => res.sendFile('index.html', { root: clientDir }));
   }
 
   app.use(errorHandler);
@@ -4460,6 +4459,7 @@ COPY shared/package.json shared/
 COPY server/package.json server/
 COPY client/package.json client/
 RUN npm ci
+COPY tsconfig.base.json ./
 COPY shared shared
 COPY client client
 RUN npm run build -w client

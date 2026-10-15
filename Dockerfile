@@ -6,6 +6,7 @@ COPY shared/package.json shared/
 COPY server/package.json server/
 COPY client/package.json client/
 RUN npm ci
+COPY tsconfig.base.json ./
 COPY shared shared
 COPY client client
 RUN npm run build -w client

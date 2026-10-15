@@ -29,4 +29,12 @@ describe('serving the built client', () => {
     expect(res.status).toBe(404);
     expect(res.body.error.code).toBe('NOT_FOUND');
   });
+
+  it('serves index.html when the client dir sits under a dot-directory', async () => {
+    const dotDir = mkdtempSync(path.join(tmpdir(), '.client-'));
+    writeFileSync(path.join(dotDir, 'index.html'), '<!doctype html><div id="root"></div>');
+    const res = await request(createApp({ clientDir: dotDir })).get('/drivers/2025/norris');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('id="root"');
+  });
 });

@@ -1,4 +1,3 @@
-import path from 'node:path';
 import cookieParser from 'cookie-parser';
 import express from 'express';
 import helmet from 'helmet';
@@ -31,7 +30,7 @@ export function createApp(opts: { clientDir?: string } = {}) {
   if (opts.clientDir) {
     const clientDir = opts.clientDir;
     app.use(express.static(clientDir, { index: false, maxAge: '1h' }));
-    app.get('/{*splat}', (_req, res) => res.sendFile(path.join(clientDir, 'index.html')));
+    app.get('/{*splat}', (_req, res) => res.sendFile('index.html', { root: clientDir }));
   }
 
   app.use(errorHandler);
