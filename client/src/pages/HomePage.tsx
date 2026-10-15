@@ -46,19 +46,20 @@ export default function HomePage() {
     <QueryState q={q}>
       {(h) => (
         <div className="grid gap-6">
+          <h1 className="sr-only">Home</h1>
           <section className="rounded-xl border border-zinc-800 bg-zinc-900 p-6" aria-labelledby="next-session">
             {h.nextSession ? (
               <>
-                <p id="next-session" className="text-sm text-zinc-400">
+                <h2 id="next-session" className="text-sm text-zinc-400">
                   Round {h.nextSession.round} · {h.nextSession.raceName} · {SESSION_LABEL[h.nextSession.session.type]}
-                </p>
+                </h2>
                 <p className="mb-4 text-sm">{formatDateTime(h.nextSession.session.startsAt)}</p>
                 <Countdown target={h.nextSession.session.startsAt} />
               </>
             ) : (
-              <p id="next-session" className="text-lg font-semibold">
+              <h2 id="next-session" className="text-lg font-semibold">
                 The {h.season} season is complete.
-              </p>
+              </h2>
             )}
             <div className="mt-6">
               <p className="mb-1 text-xs text-zinc-400">
@@ -70,7 +71,8 @@ export default function HomePage() {
             </div>
           </section>
 
-          <section className="rounded-lg border border-zinc-800 p-4" aria-label="Your favourites">
+          <section className="rounded-lg border border-zinc-800 p-4" aria-labelledby="favourites-heading">
+            <h2 id="favourites-heading" className="sr-only">Your favourites</h2>
             {h.favourites ? (
               <div className="flex flex-wrap gap-8">
                 <Favourite label="Your driver" entry={h.favourites.driver} />

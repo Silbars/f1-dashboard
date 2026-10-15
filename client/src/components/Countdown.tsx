@@ -10,8 +10,9 @@ export function Countdown({ target }: { target: string }) {
   const c = countdownParts(target, now);
   if (c.done) return <p className="text-lg font-semibold text-red-400">Session under way</p>;
   return (
-    // The visible digits tick every second; screen readers get one label instead of constant updates.
-    <p className="flex gap-4" aria-label={`${c.days} days ${c.hours} hours ${c.minutes} minutes to go`}>
+    // The visible digits tick every second; screen readers get a static summary instead.
+    <p className="flex gap-4">
+      <span className="sr-only">{`${c.days} ${c.days === 1 ? 'day' : 'days'}, ${c.hours} ${c.hours === 1 ? 'hour' : 'hours'} and ${c.minutes} ${c.minutes === 1 ? 'minute' : 'minutes'} to go`}</span>
       {(
         [
           [c.days, 'days'],

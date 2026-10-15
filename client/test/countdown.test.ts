@@ -11,4 +11,12 @@ describe('countdownParts', () => {
   it('reports done once the target has passed', () => {
     expect(countdownParts('2026-10-15T09:59:59Z', now)).toEqual({ days: 0, hours: 0, minutes: 0, seconds: 0, done: true });
   });
+
+  it('reports done with all zeros when now equals target', () => {
+    expect(countdownParts('2026-10-15T10:00:00Z', now)).toEqual({ days: 0, hours: 0, minutes: 0, seconds: 0, done: true });
+  });
+
+  it('reports all zeros but not done 500ms before target', () => {
+    expect(countdownParts('2026-10-15T10:00:00.500Z', now)).toEqual({ days: 0, hours: 0, minutes: 0, seconds: 0, done: false });
+  });
 });
