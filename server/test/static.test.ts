@@ -18,6 +18,10 @@ describe('serving the built client', () => {
     expect(res.text).toBe('console.log(1)');
   });
 
+  it('404s missing assets instead of serving index.html', async () => {
+    expect((await request(app).get('/assets/missing.js')).status).toBe(404);
+  });
+
   it('falls back to index.html for client routes', async () => {
     const res = await request(app).get('/drivers/2025/norris');
     expect(res.status).toBe(200);

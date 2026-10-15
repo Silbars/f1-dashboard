@@ -23,6 +23,8 @@ export interface QueueOptions {
   perWindow: number;
   windowMs: number;
   retries?: number;
+  /** Longest we will sleep for a slot or a Retry-After; beyond this we fail fast so callers can serve stale data. */
+  maxWaitMs?: number;
   now?: () => number;
   sleep?: (ms: number) => Promise<void>;
 }
@@ -31,6 +33,7 @@ export function createQueue(opts: QueueOptions) {
   const now = opts.now ?? Date.now;
   const sleep = opts.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
   const retries = opts.retries ?? 3;
+  const maxWaitMs = opts.maxWaitMs ?? 10_000;
   const starts: number[] = []; // start times inside the current window, oldest first
   const inflight = new Map<string, Promise<unknown>>();
   let slotChain: Promise<void> = Promise.resolve();
@@ -46,7 +49,9 @@ export function createQueue(opts: QueueOptions) {
       }
       const waitWindow = starts.length >= opts.perWindow ? starts[0]! + opts.windowMs - t : 0;
       const waitSecond = lastSecond.length >= opts.perSecond ? lastSecond[0]! + 1000 - t : 0;
-      await sleep(Math.max(waitWindow, waitSecond, 1));
+      const wait = Math.max(waitWindow, waitSecond, 1);
+      if (wait > maxWaitMs) throw new HttpError(429, wait, 'Local upstream rate budget exhausted');
+      await sleep(wait);
     }
   }
 
@@ -66,7 +71,7 @@ export function createQueue(opts: QueueOptions) {
         try {
           return await task();
         } catch (err) {
-          if (err instanceof HttpError && err.status === 429 && attempt < retries) {
+          if (err instanceof HttpError && err.status === 429 && attempt < retries && (err.retryAfterMs ?? 0) <= maxWaitMs) {
             await sleep(err.retryAfterMs ?? 1000 * 2 ** attempt);
             continue;
           }

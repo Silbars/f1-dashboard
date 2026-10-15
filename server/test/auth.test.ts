@@ -95,4 +95,21 @@ describe('auth', () => {
     const res = await request(app).get('/api/auth/me').set('Cookie', cookie);
     expect(res.status).toBe(401);
   });
+
+  it('answers the login rate limit with the JSON error shape', async () => {
+    const app = createApp();
+    let res = await request(app).post('/api/auth/login').send({});
+    for (let i = 0; i < 20; i++) res = await request(app).post('/api/auth/login').send({});
+    expect(res.status).toBe(429);
+    expect(res.body.error.code).toBe('RATE_LIMITED');
+  });
+
+  it('rejects mass-assignment of protected fields on PATCH /users/me', async () => {
+    const agent = request.agent(createApp());
+    await agent.post('/api/auth/register').send(fan);
+    for (const body of [{ email: 'hacker@example.com' }, { passwordHash: 'x' }, { _id: '000000000000000000000000' }]) {
+      expect((await agent.patch('/api/users/me').send(body)).status).toBe(400);
+    }
+    expect((await agent.get('/api/auth/me')).body.user.email).toBe('fan@example.com');
+  });
 });

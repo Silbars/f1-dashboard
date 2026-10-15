@@ -30,6 +30,9 @@ export function createApp(opts: { clientDir?: string } = {}) {
   if (opts.clientDir) {
     const clientDir = opts.clientDir;
     app.use(express.static(clientDir, { index: false, maxAge: '1h' }));
+    app.use('/assets', (_req, res) => {
+      res.sendStatus(404);
+    });
     app.get('/{*splat}', (_req, res) => res.sendFile('index.html', { root: clientDir }));
   }
 
