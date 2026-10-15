@@ -1,4 +1,12 @@
 services:
+  app:
+    build: .
+    ports: ["3000:3000"]
+    environment:
+      MONGODB_URI: mongodb://mongo:27017/f1
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
+      WARM_TOKEN: ${WARM_TOKEN:-}
+    depends_on: [mongo]
   mongo:
     image: mongo:8
     command: ["--wiredTigerCacheSizeGB", "0.5"]

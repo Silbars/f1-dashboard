@@ -1,3 +1,4 @@
+import path from 'node:path';
 import cookieParser from 'cookie-parser';
 import express from 'express';
 import helmet from 'helmet';
@@ -8,7 +9,7 @@ import { homeRouter } from './routes/home.ts';
 import { seasonsRouter } from './routes/seasons.ts';
 import { usersRouter } from './routes/users.ts';
 
-export function createApp(_opts: { clientDir?: string } = {}) {
+export function createApp(opts: { clientDir?: string } = {}) {
   const app = express();
   if (config.NODE_ENV === 'production') app.set('trust proxy', 1); // Render's proxy; needed for rate limiting by IP
   // Render serves HTTPS itself; upgrade-insecure-requests would break plain-http local runs (Docker on localhost).
@@ -26,6 +27,13 @@ export function createApp(_opts: { clientDir?: string } = {}) {
   app.use('/api/home', homeRouter());
 
   app.use('/api', notFound);
+
+  if (opts.clientDir) {
+    const clientDir = opts.clientDir;
+    app.use(express.static(clientDir, { index: false, maxAge: '1h' }));
+    app.get('/{*splat}', (_req, res) => res.sendFile(path.join(clientDir, 'index.html')));
+  }
+
   app.use(errorHandler);
 
   return app;
