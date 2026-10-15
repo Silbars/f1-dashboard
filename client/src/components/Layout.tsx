@@ -1,6 +1,8 @@
-import { useIsFetching } from '@tanstack/react-query';
+import { useIsFetching, useQueryClient } from '@tanstack/react-query';
 import { type ReactNode, Suspense, useEffect, useState } from 'react';
-import { NavLink, Outlet } from 'react-router';
+import { Link, NavLink, Outlet, useNavigate } from 'react-router';
+import { api } from '../lib/api';
+import { useMe } from '../lib/useMe';
 import { Loading } from './States';
 
 const NAV = [
@@ -26,6 +28,38 @@ function WakingBanner() {
     <p role="status" className="bg-zinc-800 px-4 py-2 text-center text-sm">
       Waking up the server… this can take up to a minute on the first visit.
     </p>
+  );
+}
+
+export function AccountMenu() {
+  const me = useMe();
+  const qc = useQueryClient();
+  const navigate = useNavigate();
+  if (me.isPending) return null;
+  if (!me.data)
+    return (
+      <Link to="/login" className="rounded bg-red-600 px-3 py-1 text-sm font-medium hover:bg-red-500">
+        Log in
+      </Link>
+    );
+  return (
+    <span className="flex items-center gap-3 text-sm">
+      <Link to="/profile" className="hover:underline">
+        {me.data.displayName}
+      </Link>
+      <button
+        type="button"
+        className="text-zinc-400 hover:text-white"
+        onClick={async () => {
+          await api.post('/auth/logout');
+          qc.setQueryData(['me'], null);
+          await qc.invalidateQueries({ queryKey: ['/home'] });
+          navigate('/');
+        }}
+      >
+        Log out
+      </button>
+    </span>
   );
 }
 
