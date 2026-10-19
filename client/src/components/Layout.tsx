@@ -12,6 +12,7 @@ const NAV = [
   ['/standings/constructors', 'Constructors’ standings'],
   ['/drivers', 'Drivers'],
   ['/teams', 'Teams'],
+  ['/replay', 'Replay'],
 ] as const;
 
 /** Render's free tier sleeps; the first request can take about a minute. */
