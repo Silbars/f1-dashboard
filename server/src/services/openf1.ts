@@ -1,7 +1,7 @@
 import { createQueue, fetchJson, HttpError } from './queue.ts';
 
 const BASE = 'https://api.openf1.org/v1';
-// Free tier: 3 req/s and 30 req/min. One request per 2.1 s stays under 30/min, and no queued call waits more than 2.1 s.
+// Free tier: 3 req/s and 30 req/min. One request every 2.1 s stays under 30/min; queued calls go out in turn.
 const queue = createQueue({ perSecond: 1, perWindow: 1, windowMs: 2_100 });
 
 /** OpenF1 answers 404 "No results found." for an empty result set; that is an empty list, not an error. */
