@@ -129,6 +129,12 @@ describe('ReplayEngine', () => {
     expect(h.named('replay:state').every((s) => s.reset === true)).toBe(true);
   });
 
+  it('re-sends the race-control message in force after a seek', () => {
+    const h = harness();
+    h.engine.seek(60_000);
+    expect(h.named('replay:event').map((e) => e.category)).toEqual(['SafetyCar']);
+  });
+
   it('stops at the end of the race', async () => {
     const h = harness();
     h.engine.setSpeed(16);

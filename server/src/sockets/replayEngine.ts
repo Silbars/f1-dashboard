@@ -65,6 +65,9 @@ export class ReplayEngine {
     this.lastBoardAt = -Infinity;
     this.epoch++;
     this.emitState(true);
+    // The banner shows the latest race-control message, so re-send the one in force at t.
+    const prior = this.session.data.events.filter((e) => e.t <= this.t).at(-1);
+    if (prior) this.emit('replay:event', prior);
   }
 
   async tick(): Promise<void> {
