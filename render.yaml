@@ -1,0 +1,14 @@
+services:
+  - type: web
+    runtime: docker
+    name: f1-dashboard
+    plan: free
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+    envVars:
+      - key: MONGODB_URI
+        sync: false # entered once in the Render dashboard when the blueprint is created
+      - key: JWT_SECRET
+        generateValue: true
+      - key: WARM_TOKEN
+        generateValue: true
