@@ -1,0 +1,35 @@
+name: Weekly replay warm
+
+on:
+  schedule:
+    - cron: '0 6 * * 1,2' # Monday and Tuesday, after most race weekends have finished
+  workflow_dispatch:
+
+jobs:
+  warm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      APP_URL: ${{ secrets.APP_URL }}
+      WARM_TOKEN: ${{ secrets.WARM_TOKEN }}
+    steps:
+      # The first request may wake Render's free instance, so retry for a while.
+      - name: Start the warm job
+        run: |
+          curl -fsS --retry 5 --retry-delay 20 --retry-all-errors -X POST \
+            -H "Authorization: Bearer $WARM_TOKEN" "$APP_URL/api/internal/warm"
+
+      # Polling once a minute also keeps the instance awake for the ~15–20 minute job.
+      - name: Wait for the job to finish
+        run: |
+          for i in $(seq 1 50); do
+            sleep 60
+            body=$(curl -fsS -H "Authorization: Bearer $WARM_TOKEN" "$APP_URL/api/internal/warm")
+            echo "$body"
+            if echo "$body" | grep -q '"running":false'; then
+              echo "$body" | grep -q '"error":null' || { echo "Warm job failed"; exit 1; }
+              exit 0
+            fi
+          done
+          echo "Warm job still running after 50 minutes"
+          exit 1
