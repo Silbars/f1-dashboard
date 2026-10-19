@@ -20,8 +20,9 @@ describe('positionAt', () => {
     expect(positionAt([[1, 0, 0, 0], [1, 3000, 30, 30]], 1500)).toEqual([0, 0]);
   });
 
-  it('is null before the first sample', () => {
-    expect(positionAt(list, -1)).toBeNull();
+  it('holds a car on the grid just before its first sample, and is null well before it', () => {
+    expect(positionAt(list, -1)).toEqual([0, 0]);
+    expect(positionAt([[1, 5000, 7, 8]], 0)).toBeNull();
   });
 });
 

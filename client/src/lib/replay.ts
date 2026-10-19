@@ -42,7 +42,11 @@ export function positionAt(list: ReplaySample[], t: number): [number, number] | 
       lo = mid + 1;
     } else hi = mid - 1;
   }
-  if (i === -1) return null;
+  if (i === -1) {
+    // Before the first sample: a car on the grid is shown where its first sample puts it, if that is close.
+    const first = list[0];
+    return first && first[1] - t <= HOLD_MS ? [first[2], first[3]] : null;
+  }
   const [, t0, x0, y0] = list[i]!;
   const next = list[i + 1];
   if (!next || next[1] - t0 > HOLD_MS) return [x0, y0];
