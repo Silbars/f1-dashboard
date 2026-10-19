@@ -1,4 +1,4 @@
-import type { ReplayDriver, ReplayEvent, ReplaySample } from '@f1/shared';
+import type { BoardRow, ReplayBoard, ReplayDriver, ReplayEvent, ReplaySample } from '@f1/shared';
 import { gunzipSync, gzipSync } from 'node:zlib';
 import type { ODriver, OInterval, OLap, OLocation, OPosition, ORaceControl, OStint } from '../openf1.ts';
 
@@ -75,6 +75,33 @@ export function buildReplayData(
       .map((r) => ({ t: t(r.date), category: r.category, flag: r.flag, message: r.message }))
       .sort(byT),
   };
+}
+
+/** The order, gaps and tyres at time t. Each list is sorted by t, so the scans stop at t. */
+export function boardAt(d: ReplayData, t: number): ReplayBoard {
+  const position = new Map<number, number>();
+  for (const [n, pt, p] of d.positions) {
+    if (pt > t) break;
+    position.set(n, p);
+  }
+  const gaps = new Map<number, [string | null, string | null]>();
+  for (const [n, it, gap, interval] of d.intervals) {
+    if (it > t) break;
+    gaps.set(n, [gap, interval]);
+  }
+  const lapOf = new Map<number, number>();
+  for (const [n, lap, lt] of d.laps) {
+    if (lt > t) break;
+    lapOf.set(n, lap);
+  }
+  const rows: BoardRow[] = [...position].map(([n, p]) => {
+    const lap = lapOf.get(n) ?? 0;
+    const stint = d.stints.find(([sn, from, to]) => sn === n && from <= lap && lap <= to);
+    const [gap, interval] = gaps.get(n) ?? [null, null];
+    return { n, position: p, gap, interval, compound: stint ? stint[3] : null };
+  });
+  rows.sort((a, b) => a.position - b.position);
+  return { t, lap: Math.max(0, ...lapOf.values()), rows };
 }
 
 export function toDrivers(rows: ODriver[]): ReplayDriver[] {
