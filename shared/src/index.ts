@@ -164,3 +164,65 @@ export interface HomeData {
 export interface ApiErrorBody {
   error: { code: string; message: string };
 }
+
+export type ReplaySessionType = 'Race' | 'Sprint';
+
+export interface ReplaySessionSummary {
+  sessionKey: number;
+  meetingKey: number;
+  meetingName: string;
+  countryName: string;
+  sessionType: ReplaySessionType;
+  startsAt: string; // ISO 8601 UTC, lights out
+  durationMs: number;
+  totalLaps: number;
+}
+
+export interface ReplayDriver {
+  n: number;
+  code: string;
+  name: string;
+  teamName: string;
+  colour: string; // '#RRGGBB', '#888888' when missing
+}
+
+export interface ReplayMeta {
+  session: ReplaySessionSummary;
+  drivers: ReplayDriver[];
+  outline: [number, number][];
+}
+
+export type ReplaySample = [n: number, t: number, x: number, y: number];
+
+export interface ReplayState {
+  playing: boolean;
+  speed: number;
+  t: number;
+  reset: boolean;
+}
+
+export interface BoardRow {
+  n: number;
+  position: number;
+  gap: string | null;
+  interval: string | null;
+  compound: string | null;
+}
+
+export interface ReplayBoard {
+  t: number;
+  lap: number;
+  rows: BoardRow[];
+}
+
+export interface ReplayEvent {
+  t: number;
+  category: string;
+  flag: string | null;
+  message: string;
+}
+
+export interface ReplayError {
+  code: string;
+  message: string;
+}
