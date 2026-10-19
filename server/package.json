@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "node --watch --env-file-if-exists=../.env src/index.ts",
     "test": "vitest run",
+    "warm": "node --env-file-if-exists=../.env scripts/warm.ts",
     "typecheck": "tsc --noEmit -p ."
   },
   "dependencies": {
