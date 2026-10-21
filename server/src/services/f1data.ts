@@ -8,6 +8,7 @@ import { StandingsModel } from '../models/Standings.ts';
 import { TeamModel } from '../models/Team.ts';
 import { type CacheResult, cachedQuery } from './cache.ts';
 import { jolpica } from './jolpica.ts';
+import { withColour } from './teamColours.ts';
 
 const HIDE = { _id: 0, __v: 0 } as const;
 
@@ -122,5 +123,5 @@ export const f1data = {
           (t) => ({ season, teamId: t.teamId }),
           { season },
         ),
-    ),
+    ).then((r) => ({ ...r, data: r.data.map(withColour) })),
 };

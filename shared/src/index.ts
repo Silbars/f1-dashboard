@@ -88,7 +88,7 @@ export interface Team {
   teamId: string;
   name: string;
   nationality: string;
-  colour: string | null; // filled from OpenF1 in Plan 2
+  colour: string | null; // '#RRGGBB', from server/src/services/teamColours.ts
 }
 
 export interface DriverSeasonRow {
