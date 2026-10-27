@@ -8,6 +8,19 @@ An unofficial Formula 1 fan dashboard: the season's schedule, results, standings
 
 > The live site runs on Render's free tier, which sleeps when idle. The first visit can take up to a minute while the server wakes; the app shows a "Waking up the server…" banner while it does.
 
+## Problem statement
+
+Following a Formula 1 season means jumping between sites for the calendar, results, standings and driver pages, and there is no free way to rewatch where every car was during a race you missed. The data does exist in two open APIs (Jolpica for results and standings, OpenF1 for car positions), but they are rate-limited, occasionally down, and not designed to be called directly from a browser.
+
+## Target users
+
+- **F1 fans who follow the season.** They want the next session's countdown, the latest results and the championship tables in one fast place, and a favourite driver and team that personalise the home page.
+- **Fans who missed a race or want to study one.** They want to replay a recent Race or Sprint with every car moving on a track map and a live leaderboard, and to compare two drivers across a season.
+
+## Solution
+
+The server sits between the browser and the two APIs. It queues and caches every upstream request in MongoDB (serving the last saved copy when an API is down), and a weekly job stores the newest race weekends as compressed minute-by-minute position data so a replay never waits on OpenF1. The React app then offers the schedule, results, standings, driver and team pages, a Head-to-Head comparison, and the race replay, which streams car positions over Socket.io from a per-viewer playback clock that the server controls. Accounts are optional and only add favourites.
+
 ## Features
 
 - **Home**: a live countdown to the next session, season progress (rounds completed out of the total), the top 10 of the drivers' and constructors' standings, and, when logged in, your favourite driver and team with their current position and points.
