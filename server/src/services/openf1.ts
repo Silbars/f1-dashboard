@@ -42,6 +42,7 @@ export interface ODriver {
   full_name: string;
   team_name: string;
   team_colour: string | null;
+  headshot_url?: string | null;
 }
 
 export interface OLap {

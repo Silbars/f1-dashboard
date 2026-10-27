@@ -2,7 +2,9 @@ import type { DriverDetail, ResultType, Standings, TeamDetail } from '@f1/shared
 import type { Request, Response } from 'express';
 import { AppError } from '../errors.ts';
 import { withOutlines } from '../services/circuitOutlines.ts';
+import { buildDriverCards, buildTeamCards } from '../services/cards.ts';
 import { f1data } from '../services/f1data.ts';
+import { headshots } from '../services/headshots.ts';
 import { buildOverview } from '../services/resultsOverview.ts';
 import { send, stale } from './send.ts';
 
@@ -47,7 +49,9 @@ export async function standings(_req: Request, res: Response) {
 }
 
 export async function drivers(_req: Request, res: Response) {
-  send(res, await f1data.drivers(params(res).year));
+  const { year } = params(res);
+  const [ds, races, ts, photos] = await Promise.all([f1data.drivers(year), f1data.seasonResults(year, 'race'), f1data.teams(year), headshots(year)]);
+  send(res, { data: buildDriverCards(ds.data, races.data, ts.data, photos), stale: stale(ds, races, ts) });
 }
 
 export async function driver(_req: Request, res: Response) {
@@ -79,7 +83,9 @@ export async function driver(_req: Request, res: Response) {
 }
 
 export async function teams(_req: Request, res: Response) {
-  send(res, await f1data.teams(params(res).year));
+  const { year } = params(res);
+  const [ds, races, ts, photos] = await Promise.all([f1data.drivers(year), f1data.seasonResults(year, 'race'), f1data.teams(year), headshots(year)]);
+  send(res, { data: buildTeamCards(ts.data, buildDriverCards(ds.data, races.data, ts.data, photos)), stale: stale(ds, races, ts) });
 }
 
 export async function team(_req: Request, res: Response) {

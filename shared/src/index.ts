@@ -130,6 +130,26 @@ export interface Team {
   colour: string | null; // '#RRGGBB', from server/src/services/teamColours.ts
 }
 
+/** A driver as the drivers page lists them: current team from the season's results, photo from OpenF1. */
+export interface DriverCard extends Driver {
+  headshot: string | null;
+  teamId: string | null; // null before the driver has raced
+  teamName: string | null;
+  colour: string | null;
+}
+
+export interface TeamCardDriver {
+  driverId: string;
+  code: string | null;
+  givenName: string;
+  familyName: string;
+  headshot: string | null;
+}
+
+export interface TeamCard extends Team {
+  drivers: TeamCardDriver[]; // current line-up, most points first
+}
+
 export interface DriverSeasonRow {
   round: number;
   raceName: string;
