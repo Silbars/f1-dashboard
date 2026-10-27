@@ -9,6 +9,8 @@ vi.mock('../src/services/jolpica.ts', () => ({
   jolpica: { schedule: vi.fn(), results: vi.fn(), seasonResults: vi.fn(), standings: vi.fn(), drivers: vi.fn(), teams: vi.fn() },
 }));
 const { jolpica } = await import('../src/services/jolpica.ts');
+// The schedule also fetches track outlines in the background; keep that off the network.
+vi.mock('../src/services/openf1.ts', async (importOriginal) => ({ ...(await importOriginal<object>()), openf1: vi.fn(async () => []) }));
 const { createApp } = await import('../src/app.ts');
 
 const fixture = (name: string): MRData =>

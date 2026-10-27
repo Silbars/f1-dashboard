@@ -7,6 +7,7 @@ export interface Circuit {
   country: string;
   lat: number;
   long: number;
+  outline?: [number, number][]; // track shape in OpenF1 coordinates; absent until stored
 }
 
 export type SessionType = 'fp1' | 'fp2' | 'fp3' | 'sprintQualifying' | 'sprint' | 'qualifying' | 'race';
