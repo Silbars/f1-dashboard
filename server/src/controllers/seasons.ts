@@ -1,6 +1,7 @@
 import type { DriverDetail, ResultType, Standings, TeamDetail } from '@f1/shared';
 import type { Request, Response } from 'express';
 import { AppError } from '../errors.ts';
+import { withOutlines } from '../services/circuitOutlines.ts';
 import { f1data } from '../services/f1data.ts';
 import { send, stale } from './send.ts';
 
@@ -8,7 +9,8 @@ type P = { year: number; round: number; kind: 'drivers' | 'constructors'; driver
 const params = (res: Response) => res.locals.params as P;
 
 export async function schedule(_req: Request, res: Response) {
-  send(res, await f1data.schedule(params(res).year));
+  const r = await f1data.schedule(params(res).year);
+  send(res, { ...r, data: await withOutlines(r.data) });
 }
 
 export async function results(_req: Request, res: Response) {
