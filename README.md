@@ -15,6 +15,7 @@ An unofficial Formula 1 fan dashboard: the season's schedule, results, standings
 - **Results**: race, sprint and qualifying results for each round, switchable with tabs.
 - **Standings**: drivers' and constructors' championship tables for any season, linking to each driver's or team's page.
 - **Drivers and Teams**: a list for each season, and a detail page per driver (round-by-round grid, finish, status and points) and per team (its drivers and best finish per round). Teams are shown in their team colours.
+- **Head-to-Head** (`/head-to-head`): pick a season and two drivers to compare points (race and sprint), wins, podiums, non-finishes, how often each finished ahead in the race and in qualifying, and a race-by-race table of who was ahead and by how many places. It starts with the top two of the championship.
 - **Race replay** (`/replay`): the Race, and the Sprint on sprint weekends, of the 3 most recent Grand Prix weekends. Every car moves around a track map drawn from real GPS data, next to a live leaderboard (position, gap, interval, tyre) and a race-control banner (flags, safety car). Play, pause, seek and 1×–16× speed; Space plays and pauses, ← and → jump 10 seconds; clicking a driver in the leaderboard rings their car on the map.
 - **Accounts**: register, log in and log out; pick a favourite driver and team on the profile page; delete the account.
 - **Resilience**: if the upstream data source fails, the app serves the last saved copy and shows a "Showing saved data" notice instead of an error.
@@ -85,6 +86,7 @@ Every client payload is validated with Zod; bad input gets `replay:error` and th
 | GET    | `/api/seasons/:year/standings/drivers\|constructors`      | –        |
 | GET    | `/api/seasons/:year/drivers`, `/drivers/:driverId`        | –        |
 | GET    | `/api/seasons/:year/teams`, `/teams/:teamId`              | –        |
+| GET    | `/api/analytics/:year/head-to-head?a=&b=` (two driver ids) | –       |
 | GET    | `/api/replay/sessions` (stored replays, newest first)     | –        |
 | POST   | `/api/auth/register`, `/api/auth/login` (rate-limited: 20 per 15 min) | – |
 | POST   | `/api/auth/logout`                                        | –        |
@@ -195,7 +197,7 @@ Read and validated at startup in `server/src/config.ts`; the server refuses to s
 
 ## Roadmap
 
-- Head-to-Head and Pit Stops analytics pages, and the fastest pit stop on Home.
+- Pit Stops analytics page, and the fastest pit stop on Home.
 - Live mode: follow a race while it happens, using the same track map.
 - Replays of older weekends (retention is 3 weekends for now).
 

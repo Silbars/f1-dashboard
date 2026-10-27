@@ -15,6 +15,7 @@ const LoginPage = lazy(() => import('./pages/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/RegisterPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const ReplayPickerPage = lazy(() => import('./pages/ReplayPickerPage'));
+const HeadToHeadPage = lazy(() => import('./pages/HeadToHeadPage'));
 const ReplayPage = lazy(() => import('./pages/ReplayPage'));
 
 export function App() {
@@ -30,6 +31,7 @@ export function App() {
         <Route path="drivers/:season/:driverId" element={<DriverPage />} />
         <Route path="teams" element={<TeamsPage />} />
         <Route path="teams/:season/:teamId" element={<TeamPage />} />
+        <Route path="head-to-head" element={<HeadToHeadPage />} />
         <Route path="replay" element={<ReplayPickerPage />} />
         <Route path="replay/:sessionKey" element={<ReplayPage />} />
         <Route path="login" element={<LoginPage />} />
