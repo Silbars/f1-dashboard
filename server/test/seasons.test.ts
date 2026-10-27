@@ -96,6 +96,13 @@ describe('season endpoints', () => {
     expect(res.status).toBe(404);
   });
 
+  it('GET teams includes a colour for every 2025 team', async () => {
+    const res = await request(app).get('/api/seasons/2025/teams');
+    expect(res.status).toBe(200);
+    expect(res.body.find((t: { teamId: string }) => t.teamId === 'mclaren')).toMatchObject({ colour: '#F47600' });
+    expect(res.body.every((t: { colour: string | null }) => /^#[0-9A-F]{6}$/i.test(t.colour ?? ''))).toBe(true);
+  });
+
   it('GET team detail lists its drivers and per-round points', async () => {
     const res = await request(app).get('/api/seasons/2025/teams/mclaren');
     expect(res.status).toBe(200);
