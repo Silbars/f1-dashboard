@@ -1,9 +1,9 @@
 # F1 Dashboard
 
-An unofficial Formula 1 fan dashboard: the season's schedule, results, standings, drivers and teams in one place, a **race replay track map** with every car moving around the circuit, and optional accounts to follow a favourite driver and team. Built as an end-term project.
+An unofficial Formula 1 fan dashboard: the season's schedule, results, standings, drivers and teams in one place, a **race replay track map** with every car moving around the circuit, and accounts to follow a favourite driver and team. Home is open to everyone; every other page needs a free account. Built as an end-term project.
 
 - **Live site:** https://f1-dashboard-5yf2.onrender.com
-- **Demo video:** (link to be added)
+- **Demo video:** https://drive.google.com/drive/folders/1qo-5K9Kv4PWYXyE9ijZavSUZ6z4_QsRv?usp=sharing
 - **Repository:** https://github.com/Silbars/f1-dashboard
 
 > The live site runs on Render's free tier, which sleeps when idle. The first visit can take up to a minute while the server wakes; the app shows a "Waking up the server…" banner while it does.
@@ -19,18 +19,18 @@ Following a Formula 1 season means jumping between sites for the calendar, resul
 
 ## Solution
 
-The server sits between the browser and the two APIs. It queues and caches every upstream request in MongoDB (serving the last saved copy when an API is down), and a weekly job stores the newest race weekends as compressed minute-by-minute position data so a replay never waits on OpenF1. The React app then offers the schedule, results, standings, driver and team pages, a Head-to-Head comparison, and the race replay, which streams car positions over Socket.io from a per-viewer playback clock that the server controls. Accounts are optional and only add favourites.
+The server sits between the browser and the two APIs. It queues and caches every upstream request in MongoDB (serving the last saved copy when an API is down), and a weekly job stores the newest race weekends as compressed minute-by-minute position data so a replay never waits on OpenF1. The React app then offers the schedule, results, standings, driver and team pages, a Head-to-Head comparison, and the race replay, which streams car positions over Socket.io from a per-viewer playback clock that the server controls. Home is public; the other pages sit behind a login (register with an email and password, which takes seconds), and an account also adds a favourite driver and team.
 
 ## Features
 
 - **Home**: a live countdown to the next session, season progress (rounds completed out of the total), the top 10 of the drivers' and constructors' standings, and, when logged in, your favourite driver and team with their current position and points.
-- **Schedule**: every round of a season with its circuit, the race start in your local time zone and a "Sprint weekend" tag. A season selector goes back to 1950. Each round links to its results.
-- **Results**: race, sprint and qualifying results for each round, switchable with tabs.
+- **Schedule**: a grid of race cards with the country flag, the date range, the race start in your local time zone, a "Sprint" tag, a Completed / Next / Upcoming status and a thumbnail of the circuit layout. A season selector goes back to 1950. Each round links to its results.
+- **Results** (`/results`): a season overview with a Grand Prix table (winner, pole and sprint winner per round) and a driver matrix of points or positions by round, switchable between combined, Grand Prix and sprint. Each round also has its own page with race, sprint and qualifying results, switchable with tabs.
 - **Standings**: drivers' and constructors' championship tables for any season, linking to each driver's or team's page.
-- **Drivers and Teams**: a list for each season, and a detail page per driver (round-by-round grid, finish, status and points) and per team (its drivers and best finish per round). Teams are shown in their team colours.
+- **Drivers and Teams**: photo cards in the team colours for each season (driver headshots from OpenF1; a driver without a photo shows their code), and a detail page per driver (round-by-round grid, finish, status and points) and per team (its drivers and best finish per round). Teams are shown in their team colours.
 - **Head-to-Head** (`/head-to-head`): pick a season and two drivers to compare points (race and sprint), wins, podiums, non-finishes, how often each finished ahead in the race and in qualifying, and a race-by-race table of who was ahead and by how many places. It starts with the top two of the championship.
 - **Race replay** (`/replay`): the Race, and the Sprint on sprint weekends, of the 3 most recent Grand Prix weekends. Every car moves around a track map drawn from real GPS data, next to a live leaderboard (position, gap, interval, tyre) and a race-control banner (flags, safety car). Play, pause, seek and 1×–16× speed; Space plays and pauses, ← and → jump 10 seconds; clicking a driver in the leaderboard rings their car on the map.
-- **Accounts**: register, log in and log out; pick a favourite driver and team on the profile page; delete the account.
+- **Accounts**: register, log in and log out; pick a favourite driver and team on the profile page; delete the account. Every page except Home redirects to the login page when you are logged out.
 - **Resilience**: if the upstream data source fails, the app serves the last saved copy and shows a "Showing saved data" notice instead of an error.
 
 ## Tech stack
@@ -49,7 +49,7 @@ The server sits between the browser and the two APIs. It queues and caches every
 Browser (React SPA)
    │  same origin: /api/*, /socket.io and static files
    ▼
-Express 5 + Socket.io server ──► MongoDB (Atlas): users, cached F1 data, stored replays
+Express 5 + Socket.io server ──► MongoDB (Atlas): users, cached F1 data, circuit outlines, stored replays
    │
    ├──► rate-limited queue ──► Jolpica-F1 API   (schedules, results, standings)
    └──► rate-limited queue ──► OpenF1 API       (car positions, laps, gaps, race control)
@@ -66,7 +66,7 @@ GitHub Actions (Mon + Tue) ──► POST /api/internal/warm ──► stores th
 
 ### Race replay
 
-1. **Track outline.** OpenF1 records each car's position (x, y) about four times a second. The server takes one car's fastest clean lap and joins the dots; that outline *is* the circuit, so no track images are needed.
+1. **Track outline.** OpenF1 records each car's position (x, y) about four times a second. The server takes one car's fastest clean lap and joins the dots; that outline *is* the circuit, so no track images are needed. The same idea draws the circuit thumbnails on the Schedule: the outline from the newest finished race at each circuit is thinned to at most 200 points and stored once per circuit (`CircuitOutline`). The schedule endpoint fetches missing outlines in the background so a page never waits on OpenF1's rate limit, and a circuit with no usable lap is stored empty and not retried.
 2. **Storage.** The warm job (`server/src/services/replay/warm.ts`) picks the Race and Sprint sessions of the 3 newest finished weekends, ordered by date. For each one it stores the session's laps, positions, gaps, tyre stints and race-control messages as one gzipped document (`ReplaySession`), then every minute of car positions as a gzipped `[driver, t, x, y]` array (`ReplayChunk`). A race is about 104 minutes and 4 MB. Older weekends are deleted, but only after the new ones are fully stored, so an OpenF1 outage never empties the replay list. Running it twice changes nothing.
 3. **Playback.** Each viewer gets their own `ReplayEngine` on the `/replay` Socket.io namespace (`server/src/sockets/`). The server owns the clock: every 250 ms it moves "now" forward by the elapsed time × speed and sends the next 2 seconds × speed of samples ahead of time, the leaderboard when it changes (at most once a second) and any new race-control messages. A missing minute is fetched from OpenF1 on demand, with a "Buffering…" notice if it takes longer than 300 ms.
 4. **Drawing.** The browser keeps the samples in a buffer and, on every animation frame, draws each car where it was at "now", placing it partway between the two samples either side (linear interpolation) so movement is smooth at 60 frames per second. Across a gap of more than 2 seconds the car is held still. The outline is drawn once per resize to an offscreen canvas.
@@ -94,7 +94,8 @@ Every client payload is validated with Zod; bad input gets `replay:error` and th
 | ------ | --------------------------------------------------------- | -------- |
 | GET    | `/api/health`                                             | –        |
 | GET    | `/api/home`                                               | optional |
-| GET    | `/api/seasons/:year/schedule`                             | –        |
+| GET    | `/api/seasons/:year/schedule` (rounds, with stored circuit outlines) | – |
+| GET    | `/api/seasons/:year/overview` (winner, pole and points by round) | – |
 | GET    | `/api/seasons/:year/races/:round/results?type=race\|sprint\|qualifying` | – |
 | GET    | `/api/seasons/:year/standings/drivers\|constructors`      | –        |
 | GET    | `/api/seasons/:year/drivers`, `/drivers/:driverId`        | –        |
@@ -108,6 +109,8 @@ Every client payload is validated with Zod; bad input gets `replay:error` and th
 | DELETE | `/api/users/me`                                           | required |
 | POST   | `/api/internal/warm` (starts the warm job, answers `202`) | `Authorization: Bearer $WARM_TOKEN` |
 | GET    | `/api/internal/warm` (status of the last warm run)        | `Authorization: Bearer $WARM_TOKEN` |
+
+The login gate is enforced in the client router (`RequireAuth`). The read-only F1 data endpoints above are public by design: they serve open data and hold nothing private. Everything user-specific (`/api/auth/me`, `/api/users/me`) requires the cookie.
 
 ## Local setup
 
@@ -217,7 +220,8 @@ Read and validated at startup in `server/src/config.ts`; the server refuses to s
 ## Data sources
 
 - **[Jolpica-F1](https://github.com/jolpica/jolpica-f1)**: schedules, results, standings, drivers and teams, through its Ergast-compatible API at `api.jolpi.ca`. Thanks to the Jolpica maintainers for keeping the Ergast data alive.
-- **[OpenF1](https://openf1.org)**: car positions, laps, gaps, tyre stints, race-control messages and team colours for the race replay, on its free tier. Used non-commercially.
+- **[OpenF1](https://openf1.org)**: car positions, laps, gaps, tyre stints, race-control messages and team colours for the race replay, plus driver headshots and circuit outlines for the cards and the schedule, on its free tier. Used non-commercially.
+- **[flagcdn.com](https://flagcdn.com)**: the country flags on the Schedule, saved as small PNGs in `client/public/flags`.
 
 The app uses no F1 or team logos.
 
