@@ -83,3 +83,65 @@ export function formatClock(ms: number): string {
   const s = total % 60;
   return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
+
+/** Where a stint sits on a strategy bar, as percentages of the race: laps lapStart..lapEnd inclusive. */
+export function stintSpan(lapStart: number, lapEnd: number, totalLaps: number): { left: number; width: number } {
+  const laps = Math.max(totalLaps, 1);
+  return { left: ((lapStart - 1) / laps) * 100, width: ((lapEnd - lapStart + 1) / laps) * 100 };
+}
+
+/** A car whose samples around the replay time span no more than this (1/10 m, OpenF1's unit) is parked. */
+export const PARK_UNITS = 100;
+const PARK_BEHIND_MS = 4000;
+/** The server sends two seconds ahead at 1x, so that is as far ahead as the buffer can be trusted. */
+const PARK_AHEAD_MS = 2000;
+
+/** Whether a car sits still around t: true or false, or null when fewer than two of its samples fall in the window. */
+export function parkedAt(list: ReplaySample[], t: number): boolean | null {
+  let count = 0;
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minY = Infinity;
+  let maxY = -Infinity;
+  for (const [, st, x, y] of list) {
+    if (st < t - PARK_BEHIND_MS) continue;
+    if (st > t + PARK_AHEAD_MS) break;
+    count++;
+    minX = Math.min(minX, x);
+    maxX = Math.max(maxX, x);
+    minY = Math.min(minY, y);
+    maxY = Math.max(maxY, y);
+  }
+  if (count < 2) return null;
+  return maxX - minX <= PARK_UNITS && maxY - minY <= PARK_UNITS;
+}
+
+/**
+ * Whether a retired car is left off the map. Before its last lap it never is. After, it goes once it sits still.
+ * With no samples of its own around t (a seek just emptied the buffer, or its data ended) it goes only if other cars have
+ * samples there; otherwise the previous answer stands.
+ */
+export function retiredHidden(wasHidden: boolean, t: number, fromMs: number, parked: boolean | null, othersHaveData: () => boolean): boolean {
+  if (t < fromMs) return false;
+  if (parked !== null) return parked;
+  return othersHaveData() ? true : wasHidden;
+}
+
+/** Points spaced `spacing` apart along a closed path, each with the heading (radians) of the segment it sits on. */
+export function pathMarks(points: [number, number][], spacing: number): { x: number; y: number; angle: number }[] {
+  const marks: { x: number; y: number; angle: number }[] = [];
+  let next = spacing / 2;
+  let walked = 0;
+  points.forEach(([x0, y0], i) => {
+    const [x1, y1] = points[(i + 1) % points.length]!;
+    const len = Math.hypot(x1 - x0, y1 - y0);
+    if (len === 0) return;
+    while (next <= walked + len) {
+      const f = (next - walked) / len;
+      marks.push({ x: x0 + (x1 - x0) * f, y: y0 + (y1 - y0) * f, angle: Math.atan2(y1 - y0, x1 - x0) });
+      next += spacing;
+    }
+    walked += len;
+  });
+  return marks;
+}

@@ -2,13 +2,17 @@ import http from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { io as connect, type Socket as ClientSocket } from 'socket.io-client';
 import { Server } from 'socket.io';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ReplayChunkModel } from '../src/models/ReplayChunk.ts';
 import { ReplaySessionModel } from '../src/models/ReplaySession.ts';
 import { forgetSession } from '../src/services/replay/store.ts';
+import { fetchTrack } from '../src/services/replay/track.ts';
 import { pack, type ReplayData } from '../src/services/replay/transform.ts';
 import { activeEngineCount, attachReplay } from '../src/sockets/replay.ts';
 import { clearDb, startDb, stopDb } from './db.ts';
+
+// The track lookup would call OpenF1 and MultiViewer; the socket only needs to see what happens with its result.
+vi.mock('../src/services/replay/track.ts', async (importOriginal) => ({ ...(await importOriginal<object>()), fetchTrack: vi.fn() }));
 
 const DURATION = 120_000;
 const data: ReplayData = {
@@ -43,6 +47,8 @@ afterAll(async () => {
 beforeEach(async () => {
   await clearDb();
   forgetSession(1);
+  vi.mocked(fetchTrack).mockReset();
+  vi.mocked(fetchTrack).mockResolvedValue({ corners: [{ number: 1, x: 10, y: 20, angle: 45 }], pitLane: [[0, 0], [100, 0]], dnf: [1] });
   await ReplaySessionModel.create({
     sessionKey: 1,
     meetingKey: 1296,
@@ -81,8 +87,24 @@ describe('/replay socket', () => {
     const meta = nextEvent(s, 'replay:meta');
     const state = nextEvent(s, 'replay:state');
     s.emit('replay:join', { sessionKey: 1 });
-    expect(await meta).toMatchObject({ session: { sessionKey: 1, totalLaps: 2 }, drivers: [{ code: 'NOR' }] });
+    expect(await meta).toMatchObject({ session: { sessionKey: 1, totalLaps: 2 }, drivers: [{ code: 'NOR' }], stints: expect.any(Array) });
     expect(await state).toMatchObject({ playing: false, speed: 1, t: 0 });
+    s.disconnect();
+  });
+
+  it('sends the track details after the meta when they were not stored yet, and in the meta once they are', async () => {
+    const s = await connected();
+    const meta = nextEvent(s, 'replay:meta');
+    const track = nextEvent(s, 'replay:track');
+    s.emit('replay:join', { sessionKey: 1 });
+    expect((await meta).track).toBeNull();
+    // Driver 1 retired: parked only after its last lap began at 60 s.
+    expect(await track).toEqual({ corners: [{ number: 1, x: 10, y: 20, angle: 45 }], pitLane: [[0, 0], [100, 0]], retired: [[1, 60_000]] });
+
+    const again = nextEvent(s, 'replay:meta');
+    s.emit('replay:join', { sessionKey: 1 });
+    expect((await again).track).toMatchObject({ retired: [[1, 60_000]] });
+    expect(fetchTrack).toHaveBeenCalledTimes(1);
     s.disconnect();
   });
 

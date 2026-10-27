@@ -1,4 +1,4 @@
-import type { ReplayBoard, ReplayError, ReplayEvent, ReplayMeta, ReplaySample, ReplayState } from '@f1/shared';
+import type { ReplayBoard, ReplayError, ReplayEvent, ReplayMeta, ReplaySample, ReplayState, ReplayTrack } from '@f1/shared';
 import { type MutableRefObject, useCallback, useEffect, useRef, useState } from 'react';
 import { io, type Socket } from 'socket.io-client';
 import { addSamples, clockAt } from '../../lib/replay';
@@ -14,6 +14,7 @@ interface Resume {
 /** Joins a replay over Socket.io. One socket per mount; the server owns the clock, this hook buffers what it sends. */
 export function useReplay(sessionKey: number) {
   const [meta, setMeta] = useState<ReplayMeta | null>(null);
+  const [track, setTrack] = useState<ReplayTrack | null>(null); // arrives with the meta, or just after it the first time a session is viewed
   const [state, setState] = useState<LiveState | null>(null);
   const [board, setBoard] = useState<ReplayBoard | null>(null);
   const [events, setEvents] = useState<ReplayEvent[]>([]); // newest first
@@ -43,6 +44,7 @@ export function useReplay(sessionKey: number) {
     socket.on('replay:meta', (m: ReplayMeta) => {
       durationRef.current = m.session.durationMs;
       setMeta(m);
+      setTrack(m.track);
       const resume = resumeRef.current;
       resumeRef.current = null;
       if (resume) {
@@ -60,9 +62,10 @@ export function useReplay(sessionKey: number) {
       }
       setState(live);
     });
+    socket.on('replay:track', (t: ReplayTrack) => setTrack(t));
     socket.on('replay:frames', ({ samples }: { samples: ReplaySample[] }) => addSamples(buffer.current, samples));
     socket.on('replay:board', (b: ReplayBoard) => setBoard(b));
-    socket.on('replay:event', (e: ReplayEvent) => setEvents((prev) => [e, ...prev].slice(0, 3)));
+    socket.on('replay:event', (e: ReplayEvent) => setEvents((prev) => [e, ...prev].slice(0, 40)));
     socket.on('replay:buffering', ({ on }: { on: boolean }) => setBuffering(on));
     socket.on('replay:error', (e: ReplayError) => setError(e));
 
@@ -76,6 +79,7 @@ export function useReplay(sessionKey: number) {
 
   return {
     meta,
+    track,
     state,
     board,
     events,

@@ -21,40 +21,48 @@ export default function SchedulePage() {
           if (races.length === 0) return <p className="text-zinc-400">No races published for {season} yet.</p>;
           const now = Date.now();
           const nextRound = races.find((r) => (raceStart(r) ? Date.parse(raceStart(r)!) >= now : false))?.round;
+          const nextRace = races.find((r) => r.round === nextRound);
           return (
-            <ol className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {races.map((r) => {
-                const start = raceStart(r);
-                const past = start ? Date.parse(start) < now : false;
-                const isNext = r.round === nextRound;
-                const status = past ? 'Completed' : isNext ? 'Next' : 'Upcoming';
-                return (
-                  <li key={r.round}>
-                    <Link
-                      to={`/results/${season}/${r.round}`}
-                      className={`card block h-full transition-colors hover:border-red-600 ${past ? 'opacity-60' : ''} ${isNext ? 'border-red-600 bg-red-950/30' : ''}`}
-                    >
-                      <div className="flex items-center justify-between gap-2 text-xs text-zinc-400">
-                        <span>
-                          Round {r.round}
-                          {r.sessions.some((s) => s.type === 'sprint') && ' · Sprint weekend'}
-                        </span>
-                        <span className={`rounded-full px-2 py-0.5 font-medium ${isNext ? 'bg-red-600 text-white' : 'bg-zinc-800 text-zinc-300'}`}>{status}</span>
-                      </div>
-                      <h2 className="mt-2 text-lg font-semibold">{r.name}</h2>
-                      <p className="text-sm text-zinc-400">
-                        {r.circuit.locality}, {r.circuit.country}
-                      </p>
-                      {start && (
-                        <p className="mt-3 text-sm">
-                          <time dateTime={start}>{formatDateTime(start)}</time>
+            <>
+              {nextRace && (
+                <a href={`#round-${nextRace.round}`} className="mb-4 inline-block text-sm text-accent-text hover:underline">
+                  Jump to the next race: {nextRace.name}
+                </a>
+              )}
+              <ol className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {races.map((r) => {
+                  const start = raceStart(r);
+                  const past = start ? Date.parse(start) < now : false;
+                  const isNext = r.round === nextRound;
+                  const status = past ? 'Completed' : isNext ? 'Next' : 'Upcoming';
+                  return (
+                    <li key={r.round} id={`round-${r.round}`} className="scroll-mt-6">
+                      <Link
+                        to={`/results/${season}/${r.round}`}
+                        className={`card block h-full transition-colors hover:border-accent ${isNext ? 'border-accent bg-accent/10' : ''}`}
+                      >
+                        <div className="flex items-center justify-between gap-2 text-xs text-zinc-400">
+                          <span>
+                            Round {r.round}
+                            {r.sessions.some((s) => s.type === 'sprint') && ' · Sprint weekend'}
+                          </span>
+                          <span className={`rounded-full px-2 py-0.5 font-medium ${isNext ? 'bg-accent text-accent-ink' : 'bg-zinc-800 text-zinc-300'}`}>{status}</span>
+                        </div>
+                        <h2 className={`mt-2 text-lg font-semibold ${past ? 'text-zinc-300' : ''}`}>{r.name}</h2>
+                        <p className="text-sm text-zinc-400">
+                          {r.circuit.locality}, {r.circuit.country}
                         </p>
-                      )}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ol>
+                        {start && (
+                          <p className="mt-3 text-sm">
+                            <time dateTime={start}>{formatDateTime(start)}</time>
+                          </p>
+                        )}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ol>
+            </>
           );
         }}
       </QueryState>

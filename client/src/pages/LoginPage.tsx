@@ -38,13 +38,13 @@ export default function LoginPage() {
         <p role="alert" aria-live="polite" className="min-h-5 text-sm text-red-400">
           {login.error?.message}
         </p>
-        <button type="submit" disabled={login.isPending} className="rounded bg-red-600 py-2 font-medium hover:bg-red-500 disabled:opacity-50">
+        <button type="submit" disabled={login.isPending} className="rounded bg-accent text-accent-ink py-2 font-medium hover:bg-accent-hi disabled:opacity-50">
           {login.isPending ? 'Logging in…' : 'Log in'}
         </button>
       </form>
       <p className="mt-4 text-sm text-zinc-400">
         New here?{' '}
-        <Link to="/register" className="text-red-400 hover:underline">
+        <Link to="/register" className="text-accent-text hover:underline">
           Create an account
         </Link>
       </p>

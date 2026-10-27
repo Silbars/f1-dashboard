@@ -1,7 +1,8 @@
 import type { ReplayDriver, ReplaySample, ReplaySessionSummary, ReplaySessionType } from '@f1/shared';
 import { ReplayChunkModel } from '../../models/ReplayChunk.ts';
-import { ReplaySessionModel } from '../../models/ReplaySession.ts';
+import { ReplaySessionModel, type StoredTrack } from '../../models/ReplaySession.ts';
 import { type OInterval, type ODriver, type OLap, type OLocation, type OPosition, type ORaceControl, type OSession, type OStint, openf1 } from '../openf1.ts';
+import { fetchTrack } from './track.ts';
 import { buildReplayData, outlineLap, pack, type ReplayData, raceWindow, toDrivers, toSamples, unpack } from './transform.ts';
 
 const MINUTE = 60_000;
@@ -13,11 +14,13 @@ export interface LoadedSession {
   outline: [number, number][];
   data: ReplayData;
   startsAtMs: number;
+  track: StoredTrack | null; // null until ensureTrack has stored it
 }
 
 const sessions = new Map<number, LoadedSession>();
 const chunks = new Map<string, ReplaySample[]>(); // insertion order = recency, oldest first
 const pendingChunks = new Map<string, Promise<ReplaySample[]>>();
+const pendingTracks = new Map<number, Promise<StoredTrack | null>>();
 
 /** Test helper: forget in-memory chunks so the next read goes to Mongo. */
 export function clearChunkMemory() {
@@ -89,9 +92,34 @@ export async function loadSession(sessionKey: number): Promise<LoadedSession | n
     outline: doc.outline,
     data: unpack<ReplayData>(doc.data),
     startsAtMs: doc.startsAt.getTime(),
+    track: doc.track ?? null,
   };
   sessions.set(sessionKey, loaded);
   return loaded;
+}
+
+/**
+ * Looks up a session's corners, pit lane and retirements once and stores them on the session.
+ * Concurrent callers share one lookup. Resolves null when a source failed; the next join tries again.
+ */
+export function ensureTrack(s: LoadedSession): Promise<StoredTrack | null> {
+  if (s.track) return Promise.resolve(s.track);
+  const { sessionKey } = s.summary;
+  const pending = pendingTracks.get(sessionKey);
+  if (pending) return pending;
+  const p = fetchTrack(sessionKey)
+    .then(async (track) => {
+      await ReplaySessionModel.updateOne({ sessionKey }, { $set: { track } });
+      s.track = track;
+      return track;
+    })
+    .catch((err: unknown) => {
+      console.error(`Track details for session ${sessionKey} failed`, err);
+      return null;
+    })
+    .finally(() => pendingTracks.delete(sessionKey));
+  pendingTracks.set(sessionKey, p);
+  return p;
 }
 
 export const minutesOf = (s: LoadedSession) => Math.ceil(s.summary.durationMs / MINUTE);

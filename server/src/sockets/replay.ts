@@ -2,7 +2,8 @@ import type { ReplayMeta } from '@f1/shared';
 import type { Server, Socket } from 'socket.io';
 import { z, ZodError } from 'zod';
 import { AppError } from '../errors.ts';
-import { loadSession, samplesBetween } from '../services/replay/store.ts';
+import { ensureTrack, loadSession, samplesBetween } from '../services/replay/store.ts';
+import { toReplayTrack } from '../services/replay/track.ts';
 import { ReplayEngine, TICK_MS, type Speed } from './replayEngine.ts';
 
 const JoinPayload = z.object({ sessionKey: z.number().int().positive() });
@@ -67,10 +68,22 @@ export function attachReplay(io: Server) {
         (from, to) => samplesBetween(session, from, to),
       );
       engines.add(engine);
-      const meta: ReplayMeta = { session: session.summary, drivers: session.drivers, outline: session.outline };
+      const meta: ReplayMeta = {
+        session: session.summary,
+        drivers: session.drivers,
+        outline: session.outline,
+        stints: session.data.stints,
+        track: toReplayTrack(session.track, session.data.laps),
+      };
       socket.emit('replay:meta', meta);
       engine.seek(0);
       const replay = engine;
+      // First viewer of a session: look the track details up in the background, then send them if this socket is still here.
+      if (!session.track) {
+        void ensureTrack(session).then((track) => {
+          if (track && engine === replay) socket.emit('replay:track', toReplayTrack(track, session.data.laps));
+        });
+      }
       timer = setInterval(() => {
         replay.tick().catch((err: unknown) => report(socket, err));
       }, TICK_MS);

@@ -23,7 +23,7 @@ export function ErrorState({ error, onRetry }: { error: Error; onRetry: () => vo
   return (
     <div role="alert" className="rounded-lg border border-red-900 bg-red-950/40 p-4">
       <p className="mb-3">{error.message}</p>
-      <button type="button" onClick={onRetry} className="rounded bg-red-600 px-3 py-1 text-sm font-medium hover:bg-red-500">
+      <button type="button" onClick={onRetry} className="rounded bg-accent text-accent-ink px-3 py-1 text-sm font-medium hover:bg-accent-hi">
         Try again
       </button>
     </div>

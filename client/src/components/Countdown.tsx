@@ -8,7 +8,7 @@ export function Countdown({ target }: { target: string }) {
     return () => clearInterval(t);
   }, []);
   const c = countdownParts(target, now);
-  if (c.done) return <p className="text-lg font-semibold text-red-400">Session under way</p>;
+  if (c.done) return <p className="text-lg font-semibold text-accent-text">Session under way</p>;
   return (
     // The visible digits tick every second; screen readers get a static summary instead.
     <p className="flex gap-4">

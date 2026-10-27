@@ -1,5 +1,12 @@
-import type { ReplayDriver, ReplaySessionType } from '@f1/shared';
+import type { ReplayCorner, ReplayDriver, ReplaySessionType } from '@f1/shared';
 import { model, Schema } from 'mongoose';
+
+/** Looked up once per session, after ingest: turn positions, the pit lane trace and who retired. */
+export interface StoredTrack {
+  corners: ReplayCorner[];
+  pitLane: [number, number][];
+  dnf: number[]; // driver numbers
+}
 
 export interface ReplaySessionDoc {
   sessionKey: number;
@@ -14,6 +21,7 @@ export interface ReplaySessionDoc {
   outline: [number, number][];
   data: Buffer; // gzipped ReplayData: laps, positions, intervals, stints and race-control events
   complete: boolean; // true once every minute chunk is stored
+  track?: StoredTrack; // absent until first looked up
 }
 
 const ReplaySessionSchema = new Schema<ReplaySessionDoc>({
@@ -29,6 +37,7 @@ const ReplaySessionSchema = new Schema<ReplaySessionDoc>({
   outline: { type: Schema.Types.Mixed, required: true },
   data: { type: Buffer, required: true },
   complete: { type: Boolean, default: false },
+  track: { type: Schema.Types.Mixed },
 });
 
 export const ReplaySessionModel = model<ReplaySessionDoc>('ReplaySession', ReplaySessionSchema);

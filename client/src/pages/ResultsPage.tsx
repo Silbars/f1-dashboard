@@ -27,7 +27,7 @@ export default function ResultsPage() {
             type="button"
             aria-pressed={t === type}
             onClick={() => setParams({ type: t }, { replace: true })}
-            className={`rounded px-3 py-1 text-sm ${t === type ? 'bg-red-600' : 'bg-zinc-800 hover:bg-zinc-700'}`}
+            className={`rounded px-3 py-1 text-sm ${t === type ? 'bg-accent text-accent-ink' : 'bg-zinc-800 hover:bg-zinc-700'}`}
           >
             {label}
           </button>

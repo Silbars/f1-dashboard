@@ -21,7 +21,7 @@ export default function DriversPage() {
             <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {drivers.map((d) => (
                 <li key={d.driverId}>
-                  <Link to={`/drivers/${season}/${d.driverId}`} className="block rounded-lg border border-zinc-800 p-4 hover:border-red-600">
+                  <Link to={`/drivers/${season}/${d.driverId}`} className="block rounded-lg border border-zinc-800 p-4 hover:border-accent">
                     <p className="text-xs text-zinc-400">
                       {d.code ?? ''} {d.number !== null && `#${d.number}`}
                     </p>

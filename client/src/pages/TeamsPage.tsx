@@ -23,7 +23,7 @@ export default function TeamsPage() {
                 <li key={t.teamId}>
                   <Link
                     to={`/teams/${season}/${t.teamId}`}
-                    className="block rounded-lg border border-l-4 border-zinc-800 p-4 hover:border-red-600"
+                    className="block rounded-lg border border-l-4 border-zinc-800 p-4 hover:border-accent"
                     style={{ borderLeftColor: t.colour ?? '#52525b' }}
                   >
                     <p className="font-semibold">{t.name}</p>
