@@ -98,9 +98,10 @@ export function AccountMenu() {
   const logout = useMutation({
     mutationFn: () => api.post('/auth/logout'),
     onSuccess: async () => {
+      // Leave protected pages before clearing the session, or RequireAuth bounces through /login.
+      navigate('/');
       qc.setQueryData(['me'], null);
       await qc.invalidateQueries({ queryKey: ['/home'] });
-      navigate('/');
     },
   });
   if (me.isPending) return null;
