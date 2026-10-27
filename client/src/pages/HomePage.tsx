@@ -7,7 +7,7 @@ import { useApi } from '../lib/useApi';
 
 function Top10({ title, rows, to }: { title: string; rows: StandingEntry[]; to: string }) {
   return (
-    <div className="rounded-lg border border-zinc-800 p-4">
+    <div className="card">
       <h2 className="mb-3 font-semibold">{title}</h2>
       {rows.length === 0 ? (
         <p className="text-sm text-zinc-400">No standings yet.</p>

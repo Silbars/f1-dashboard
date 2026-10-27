@@ -3,3 +3,27 @@
 :root {
   color-scheme: dark;
 }
+
+/* Keyboard focus is visible on every control. */
+:focus-visible {
+  outline: 2px solid var(--color-red-500);
+  outline-offset: 2px;
+  border-radius: 0.25rem;
+}
+
+@utility card {
+  @apply rounded-xl border border-zinc-800 bg-zinc-900/60 p-4;
+}
+
+/* One table look for every page; pages keep their own padding and alignment. */
+thead th {
+  @apply text-xs font-medium tracking-wide text-zinc-400 uppercase;
+}
+
+tbody tr {
+  @apply border-t border-zinc-800/80 transition-colors hover:bg-zinc-900/70;
+}
+
+tbody td {
+  @apply tabular-nums;
+}
