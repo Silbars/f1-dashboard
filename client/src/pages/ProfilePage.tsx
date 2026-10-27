@@ -23,9 +23,10 @@ export default function ProfilePage() {
   const remove = useMutation({
     mutationFn: () => api.del('/users/me'),
     onSuccess: async () => {
+      // Leave protected pages before clearing the session, or RequireAuth bounces through /login.
+      navigate('/');
       qc.setQueryData(['me'], null);
       await qc.invalidateQueries({ queryKey: ['/home'] });
-      navigate('/');
     },
   });
 
