@@ -125,6 +125,31 @@ export interface TeamDetail {
   totalPoints: number;
 }
 
+export interface H2HStats {
+  driver: Driver;
+  points: number; // race + sprint
+  wins: number;
+  podiums: number;
+  dnfs: number; // races not classified (retired, disqualified, ...)
+  raceAhead: number; // races finished ahead of the other driver
+  qualiAhead: number; // qualifying sessions ahead of the other driver
+}
+
+export interface H2HRound {
+  round: number;
+  raceName: string;
+  a: string | null; // positionText, null when the driver did not take part
+  b: string | null;
+  gap: number | null; // b's position minus a's: positive when a finished ahead
+}
+
+export interface HeadToHead {
+  season: number;
+  a: H2HStats;
+  b: H2HStats;
+  rounds: H2HRound[];
+}
+
 export interface PublicUser {
   id: string;
   email: string;

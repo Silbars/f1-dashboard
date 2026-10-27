@@ -3,6 +3,7 @@ import express from 'express';
 import helmet from 'helmet';
 import { config } from './config.ts';
 import { errorHandler, notFound } from './middleware/errorHandler.ts';
+import { analyticsRouter } from './routes/analytics.ts';
 import { authRouter } from './routes/auth.ts';
 import { internalRouter, replayRouter } from './routes/replay.ts';
 import { homeRouter } from './routes/home.ts';
@@ -25,6 +26,7 @@ export function createApp(opts: { clientDir?: string } = {}) {
   app.use('/api/auth', authRouter());
   app.use('/api/users', usersRouter());
   app.use('/api/home', homeRouter());
+  app.use('/api/analytics', analyticsRouter());
   app.use('/api/replay', replayRouter());
   app.use('/api/internal', internalRouter());
 

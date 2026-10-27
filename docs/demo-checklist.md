@@ -5,7 +5,7 @@ Target length: 4–6 minutes. Record the live site: https://f1-dashboard-5yf2.on
 ## Before recording
 
 - [ ] **Wake Render 2 minutes early.** Open the live site (or `https://f1-dashboard-5yf2.onrender.com/api/health`) and wait for it to load. The free tier sleeps when idle; the first request can take about a minute.
-- [ ] **Warm the pages you will show** by opening each one once (Home, Schedule, a results page, both standings, a driver, a team, `/replay`), so nothing waits on the upstream API while you record.
+- [ ] **Warm the pages you will show** by opening each one once (Home, Schedule, a results page, both standings, a driver, a team, Head-to-Head, `/replay`), so nothing waits on the upstream API while you record.
 - [ ] **Check the replays.** `/replay` should list the 3 newest weekends. Open the race you will show, press play for a few seconds, then reload, so its first minutes are already in the server's memory. Pick a moment worth seeking to (the start, a safety car, a pit-stop window) and note its time on the clock.
 - [ ] **Test account ready.** Register a demo account in advance (a made-up email such as `demo@example.com`, not a real password you use elsewhere). Write down which favourite driver and team you will pick. For the register shot, have a second made-up email ready.
 - [ ] **Log out** before you start, so the video opens as a visitor.
@@ -26,6 +26,7 @@ Target length: 4–6 minutes. Record the live site: https://f1-dashboard-5yf2.on
 | 6 | Drivers' standings, then Constructors' standings. | "Both championship tables, for any season." |
 | 7 | Click a driver in the standings → driver page with the round-by-round table. | "Each driver has a page with grid, finish, status and points for every round." |
 | 8 | Teams list (point at the team colours) → a team page with its drivers and best finish per round. | "Same for teams, in their team colours." |
+| 8b | **Head-to-Head.** Open it from the nav; it starts with the championship's top two. Change Driver B, then scroll the race-by-race table. | "Head-to-head compares any two drivers in a season: points, wins, podiums, who finished ahead in races and in qualifying, and round by round." |
 | 9 | **Replay picker.** Click "Replay" in the nav. | "The signature feature is the race replay. These are the last three Grand Prix weekends, with the sprint where there was one." |
 | 10 | Open a race. Point at the track outline and the cars on the grid. Press **Play**. | "The track isn't an image: it's drawn from one car's GPS trace over its fastest lap. Every dot is a car, in its team colour." |
 | 11 | Switch to **16×**. Let it run a few seconds; point at the leaderboard updating and the lap counter. | "The server owns the playback clock and streams car positions over Socket.io a few seconds ahead. The browser blends between samples, so the cars move smoothly at 60 frames a second. The leaderboard shows gaps, intervals and tyres as the race goes on." |
@@ -37,7 +38,7 @@ Target length: 4–6 minutes. Record the live site: https://f1-dashboard-5yf2.on
 | 17 | Profile → "Delete my account" on the account made in shot 14, confirm. | "Users can delete their account and data." |
 | 18 | **How the data gets there.** Show the README's architecture and race replay sections. | "Results and standings come from the Jolpica API through a rate-limited queue and are cached in MongoDB; if Jolpica is down, the app shows the saved copy with a notice instead of an error. Replays come from OpenF1: a GitHub Actions job runs every Monday and Tuesday, stores the newest weekends minute by minute, compressed, and deletes the oldest." |
 | 19 | GitHub repo: the README, the Actions tab with a green CI run and a green "Weekly replay warm" run. | "CI runs a gitleaks secret scan, the type checker and the tests on every push. No secrets are in the repo." |
-| 20 | Back to the site footer. | "Next up: head-to-head and pit-stop analytics, and live mode during a race. Thanks for watching." Footer reads: unofficial fan project, not associated with Formula 1, the FIA or Formula One Management. |
+| 20 | Back to the site footer. | "Next up: pit-stop analytics, and live mode during a race. Thanks for watching." Footer reads: unofficial fan project, not associated with Formula 1, the FIA or Formula One Management. |
 
 ## After recording
 
