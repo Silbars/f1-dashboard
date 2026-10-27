@@ -3,6 +3,7 @@ import {
   CalendarDays,
   Clapperboard,
   Factory,
+  Flag,
   House,
   Menu,
   PanelLeftClose,
@@ -33,6 +34,7 @@ const GROUPS: { heading?: string; items: NavItem[] }[] = [
     items: [
       { to: '/', label: 'Home', icon: House, end: true },
       { to: '/schedule', label: 'Schedule', icon: CalendarDays },
+      { to: '/results', label: 'Results', icon: Flag, end: true },
     ],
   },
   {

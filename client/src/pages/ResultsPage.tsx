@@ -17,8 +17,8 @@ export default function ResultsPage() {
 
   return (
     <section>
-      <Link to={`/schedule?season=${season}`} className="text-sm text-zinc-400 hover:text-white">
-        ← {season} schedule
+      <Link to={`/results?season=${season}`} className="text-sm text-zinc-400 hover:text-white">
+        ← {season} results
       </Link>
       <div role="group" aria-label="Session" className="mb-4 flex gap-2">
         {TYPES.map(([t, label]) => (

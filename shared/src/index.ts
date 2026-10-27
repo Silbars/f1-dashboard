@@ -55,6 +55,44 @@ export interface RaceResult {
   entries: ResultEntry[];
 }
 
+/** One driver's result in one session. positionText is a number when classified, else R, D, W, N, F or E. */
+export interface OverviewCell {
+  positionText: string;
+  points: number;
+}
+
+export interface OverviewPerson {
+  driverId: string;
+  code: string | null;
+  name: string;
+  colour: string | null;
+}
+
+export interface OverviewRound {
+  round: number;
+  raceName: string;
+  country: string;
+  date: string | null; // ISO 8601 UTC, race start
+  hasSprint: boolean;
+  poleman: OverviewPerson | null;
+  winner: OverviewPerson | null;
+  sprintWinner: OverviewPerson | null;
+}
+
+export interface OverviewDriver extends OverviewPerson {
+  teamId: string;
+  teamName: string;
+  race: Record<number, OverviewCell>; // keyed by round
+  sprint: Record<number, OverviewCell>;
+}
+
+/** Every round of a season (raced or not) and every driver's race and sprint result in each. */
+export interface SeasonOverview {
+  season: number;
+  rounds: OverviewRound[];
+  drivers: OverviewDriver[];
+}
+
 export type StandingsKind = 'driver' | 'constructor';
 
 export interface StandingEntry {
