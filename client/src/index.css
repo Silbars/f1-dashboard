@@ -25,8 +25,6 @@
 
 body {
   background-color: var(--surface);
-  background-image: radial-gradient(60rem 28rem at 0% -8%, color-mix(in oklab, var(--accent) 16%, transparent), transparent 70%);
-  background-attachment: fixed;
 }
 
 /* Keyboard focus is visible on every control. */

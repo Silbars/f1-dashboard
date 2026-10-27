@@ -41,7 +41,7 @@ export function VelocityMarquee({ items, baseVelocity = 4 }: { items: string[]; 
   ));
 
   return (
-    <div className="overflow-hidden whitespace-nowrap py-2 select-none" aria-hidden>
+    <div className="overflow-hidden whitespace-nowrap py-2 select-none [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]" aria-hidden>
       <motion.div className="flex w-max" style={{ x: reduce ? 0 : x }}>
         <div className="flex shrink-0">{copy}</div>
         <div className="flex shrink-0">{copy}</div>

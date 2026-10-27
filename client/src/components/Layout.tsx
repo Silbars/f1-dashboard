@@ -157,7 +157,7 @@ export function Layout({ account }: { account?: ReactNode }) {
       >
         <div className="livery-stripe h-1.5 shrink-0" />
 
-        <div className="flex items-center justify-between gap-2 px-4 py-4">
+        <div className={`flex items-center justify-between gap-2 px-4 py-4 ${collapsed ? 'md:flex-col md:justify-center md:gap-3 md:px-0' : ''}`}>
           <Link to="/" onClick={closeMenu} className="flex min-w-0 items-center gap-2.5">
             <span className="grid size-8 shrink-0 place-items-center rounded-md bg-accent text-sm font-black text-accent-ink">F1</span>
             <span className={`truncate text-lg font-black tracking-tight ${collapsed ? 'md:hidden' : ''}`}>Dashboard</span>

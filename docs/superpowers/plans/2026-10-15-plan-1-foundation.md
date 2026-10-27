@@ -92,17 +92,20 @@ client/
 ### Task 1: Monorepo scaffold and health endpoint
 
 **Files:**
+
 - Create: `package.json`, `tsconfig.base.json`, `.gitignore`, `.env.example`, `docker-compose.yml`
 - Create: `shared/package.json`, `shared/src/index.ts`
 - Create: `server/package.json`, `server/tsconfig.json`, `server/vitest.config.ts`, `server/src/config.ts`, `server/src/app.ts`, `server/src/index.ts`
 - Test: `server/test/health.test.ts`
 
 **Interfaces:**
+
 - Produces: `createApp(opts?: { clientDir?: string }): express.Express`; `config` object `{ NODE_ENV, PORT, MONGODB_URI, JWT_SECRET, WARM_TOKEN? }`; every shared type used by later tasks.
 
 - [ ] **Step 1: Root files**
 
 `package.json`:
+
 ```json
 {
   "name": "f1-dashboard",
@@ -122,6 +125,7 @@ client/
 ```
 
 `tsconfig.base.json`:
+
 ```json
 {
   "compilerOptions": {
@@ -142,6 +146,7 @@ client/
 ```
 
 `.gitignore`:
+
 ```
 node_modules/
 client/dist/
@@ -151,6 +156,7 @@ coverage/
 ```
 
 `.env.example`:
+
 ```
 # Copy to .env for local development. Never commit .env.
 # Generate secrets with: openssl rand -hex 32
@@ -161,6 +167,7 @@ PORT=3000
 ```
 
 `docker-compose.yml` (the `app` service is added in Task 14):
+
 ```yaml
 services:
   mongo:
@@ -175,6 +182,7 @@ volumes:
 - [ ] **Step 2: Shared types package**
 
 `shared/package.json`:
+
 ```json
 {
   "name": "@f1/shared",
@@ -185,6 +193,7 @@ volumes:
 ```
 
 `shared/src/index.ts`:
+
 ```ts
 // Types shared by server and client. Type-only: always `import type { ... } from '@f1/shared'`.
 
@@ -197,7 +206,8 @@ export interface Circuit {
   long: number;
 }
 
-export type SessionType = 'fp1' | 'fp2' | 'fp3' | 'sprintQualifying' | 'sprint' | 'qualifying' | 'race';
+export type SessionType =
+  "fp1" | "fp2" | "fp3" | "sprintQualifying" | "sprint" | "qualifying" | "race";
 
 export interface SessionTime {
   type: SessionType;
@@ -212,7 +222,7 @@ export interface Race {
   sessions: SessionTime[]; // sorted by startsAt
 }
 
-export type ResultType = 'race' | 'sprint' | 'qualifying';
+export type ResultType = "race" | "sprint" | "qualifying";
 
 export interface ResultEntry {
   position: number | null;
@@ -242,7 +252,7 @@ export interface RaceResult {
   entries: ResultEntry[];
 }
 
-export type StandingsKind = 'driver' | 'constructor';
+export type StandingsKind = "driver" | "constructor";
 
 export interface StandingEntry {
   position: number | null;
@@ -346,7 +356,10 @@ export interface HomeData {
   driverTop10: StandingEntry[];
   constructorTop10: StandingEntry[];
   fastestPitStop: FastestPitStop | null; // null until Plan 3
-  favourites: { driver: StandingEntry | null; team: StandingEntry | null } | null; // null when logged out
+  favourites: {
+    driver: StandingEntry | null;
+    team: StandingEntry | null;
+  } | null; // null when logged out
 }
 
 export interface ApiErrorBody {
@@ -357,6 +370,7 @@ export interface ApiErrorBody {
 - [ ] **Step 3: Server package and install dependencies**
 
 `server/package.json`:
+
 ```json
 {
   "name": "@f1/server",
@@ -374,6 +388,7 @@ export interface ApiErrorBody {
 ```
 
 `server/tsconfig.json`:
+
 ```json
 {
   "extends": "../tsconfig.base.json",
@@ -383,25 +398,28 @@ export interface ApiErrorBody {
 ```
 
 Run from the repo root:
+
 ```bash
 npm install -w server express@^5.3 mongoose@^9.11 zod@^4.6 helmet@^8 cookie-parser@^1.4 express-rate-limit@^8 bcryptjs@^3 jsonwebtoken@^9
 npm install -D -w server typescript@~5.9.3 vitest@^5 supertest@^7 mongodb-memory-server@^11 @types/node @types/express@^5 @types/cookie-parser @types/jsonwebtoken @types/supertest
 ```
+
 Expected: `package-lock.json` created; no errors.
 
 - [ ] **Step 4: Write the failing test**
 
 `server/vitest.config.ts`:
+
 ```ts
-import { defineConfig } from 'vitest/config';
+import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
-    environment: 'node',
+    environment: "node",
     env: {
-      NODE_ENV: 'test',
-      JWT_SECRET: 'test-secret-test-secret-test-secret-0000',
-      WARM_TOKEN: 'test-warm-token-test-warm-token-00000000',
+      NODE_ENV: "test",
+      JWT_SECRET: "test-secret-test-secret-test-secret-0000",
+      WARM_TOKEN: "test-warm-token-test-warm-token-00000000",
     },
     testTimeout: 30_000,
     hookTimeout: 120_000, // first run downloads a MongoDB binary
@@ -411,14 +429,15 @@ export default defineConfig({
 ```
 
 `server/test/health.test.ts`:
-```ts
-import request from 'supertest';
-import { describe, expect, it } from 'vitest';
-import { createApp } from '../src/app.ts';
 
-describe('GET /api/health', () => {
-  it('returns ok', async () => {
-    const res = await request(createApp()).get('/api/health');
+```ts
+import request from "supertest";
+import { describe, expect, it } from "vitest";
+import { createApp } from "../src/app.ts";
+
+describe("GET /api/health", () => {
+  it("returns ok", async () => {
+    const res = await request(createApp()).get("/api/health");
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ ok: true });
   });
@@ -433,16 +452,19 @@ Expected: FAIL, cannot find module `../src/app.ts`.
 - [ ] **Step 6: Implement config, app and entry point**
 
 `server/src/config.ts`:
-```ts
-import { z } from 'zod';
 
-const emptyToUndefined = (v: unknown) => (v === '' ? undefined : v);
+```ts
+import { z } from "zod";
+
+const emptyToUndefined = (v: unknown) => (v === "" ? undefined : v);
 
 const Env = z.object({
-  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  NODE_ENV: z
+    .enum(["development", "test", "production"])
+    .default("development"),
   PORT: z.coerce.number().int().positive().default(3000),
-  MONGODB_URI: z.string().min(1).default('mongodb://localhost:27017/f1'),
-  JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
+  MONGODB_URI: z.string().min(1).default("mongodb://localhost:27017/f1"),
+  JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters"),
   WARM_TOKEN: z.preprocess(emptyToUndefined, z.string().min(32).optional()),
 });
 
@@ -450,21 +472,26 @@ export const config = Env.parse(process.env);
 ```
 
 `server/src/app.ts`:
+
 ```ts
-import cookieParser from 'cookie-parser';
-import express from 'express';
-import helmet from 'helmet';
-import { config } from './config.ts';
+import cookieParser from "cookie-parser";
+import express from "express";
+import helmet from "helmet";
+import { config } from "./config.ts";
 
 export function createApp(_opts: { clientDir?: string } = {}) {
   const app = express();
-  if (config.NODE_ENV === 'production') app.set('trust proxy', 1); // Render's proxy; needed for rate limiting by IP
+  if (config.NODE_ENV === "production") app.set("trust proxy", 1); // Render's proxy; needed for rate limiting by IP
   // Render serves HTTPS itself; upgrade-insecure-requests would break plain-http local runs (Docker on localhost).
-  app.use(helmet({ contentSecurityPolicy: { directives: { upgradeInsecureRequests: null } } }));
-  app.use(express.json({ limit: '100kb' }));
+  app.use(
+    helmet({
+      contentSecurityPolicy: { directives: { upgradeInsecureRequests: null } },
+    }),
+  );
+  app.use(express.json({ limit: "100kb" }));
   app.use(cookieParser());
 
-  app.get('/api/health', (_req, res) => {
+  app.get("/api/health", (_req, res) => {
     res.json({ ok: true });
   });
 
@@ -473,16 +500,20 @@ export function createApp(_opts: { clientDir?: string } = {}) {
 ```
 
 `server/src/index.ts`:
+
 ```ts
-import http from 'node:http';
-import path from 'node:path';
-import mongoose from 'mongoose';
-import { createApp } from './app.ts';
-import { config } from './config.ts';
+import http from "node:http";
+import path from "node:path";
+import mongoose from "mongoose";
+import { createApp } from "./app.ts";
+import { config } from "./config.ts";
 
 await mongoose.connect(config.MONGODB_URI);
 
-const clientDir = config.NODE_ENV === 'production' ? path.resolve(import.meta.dirname, '../../client/dist') : undefined;
+const clientDir =
+  config.NODE_ENV === "production"
+    ? path.resolve(import.meta.dirname, "../../client/dist")
+    : undefined;
 const server = http.createServer(createApp({ clientDir }));
 server.listen(config.PORT, () => {
   console.log(`F1 dashboard server listening on :${config.PORT}`);
@@ -501,6 +532,7 @@ cp .env.example .env    # then set JWT_SECRET to the output of: openssl rand -he
 docker compose up -d mongo   # or put an Atlas connection string in MONGODB_URI instead
 npm run dev:server
 ```
+
 In another terminal: `curl -s localhost:3000/api/health` → `{"ok":true}`. Stop the server (Ctrl-C).
 
 - [ ] **Step 9: Commit**
@@ -515,11 +547,13 @@ git commit -m "chore: scaffold monorepo with shared types and Express health end
 ### Task 2: Error handling and validation middleware
 
 **Files:**
+
 - Create: `server/src/errors.ts`, `server/src/middleware/errorHandler.ts`, `server/src/middleware/validate.ts`, `server/src/schemas.ts`
 - Modify: `server/src/app.ts`
 - Test: `server/test/errors.test.ts`
 
 **Interfaces:**
+
 - Produces:
   - `class AppError extends Error { status: number; code: string }` — `new AppError(404, 'NOT_FOUND', 'msg')`
   - `notFound: RequestHandler`, `errorHandler: ErrorRequestHandler`
@@ -529,29 +563,34 @@ git commit -m "chore: scaffold monorepo with shared types and Express health end
 - [ ] **Step 1: Write the failing tests**
 
 `server/test/errors.test.ts`:
+
 ```ts
-import express from 'express';
-import request from 'supertest';
-import { describe, expect, it } from 'vitest';
-import { z } from 'zod';
-import { AppError } from '../src/errors.ts';
-import { errorHandler, notFound } from '../src/middleware/errorHandler.ts';
-import { validate } from '../src/middleware/validate.ts';
-import { yearSchema } from '../src/schemas.ts';
+import express from "express";
+import request from "supertest";
+import { describe, expect, it } from "vitest";
+import { z } from "zod";
+import { AppError } from "../src/errors.ts";
+import { errorHandler, notFound } from "../src/middleware/errorHandler.ts";
+import { validate } from "../src/middleware/validate.ts";
+import { yearSchema } from "../src/schemas.ts";
 
 function testApp() {
   const app = express();
   app.use(express.json());
-  app.get('/app-error', () => {
-    throw new AppError(418, 'TEAPOT', 'I am a teapot');
+  app.get("/app-error", () => {
+    throw new AppError(418, "TEAPOT", "I am a teapot");
   });
-  app.get('/crash', async () => {
-    throw new Error('secret internal detail');
+  app.get("/crash", async () => {
+    throw new Error("secret internal detail");
   });
-  app.get('/year/:year', validate({ params: z.object({ year: yearSchema }) }), (_req, res) => {
-    res.json(res.locals.params);
-  });
-  app.post('/echo', (req, res) => {
+  app.get(
+    "/year/:year",
+    validate({ params: z.object({ year: yearSchema }) }),
+    (_req, res) => {
+      res.json(res.locals.params);
+    },
+  );
+  app.post("/echo", (req, res) => {
     res.json(req.body);
   });
   app.use(notFound);
@@ -559,51 +598,59 @@ function testApp() {
   return app;
 }
 
-describe('error handling', () => {
-  it('turns AppError into the JSON error shape', async () => {
-    const res = await request(testApp()).get('/app-error');
+describe("error handling", () => {
+  it("turns AppError into the JSON error shape", async () => {
+    const res = await request(testApp()).get("/app-error");
     expect(res.status).toBe(418);
-    expect(res.body).toEqual({ error: { code: 'TEAPOT', message: 'I am a teapot' } });
+    expect(res.body).toEqual({
+      error: { code: "TEAPOT", message: "I am a teapot" },
+    });
   });
 
-  it('hides unknown error details behind a generic 500', async () => {
-    const res = await request(testApp()).get('/crash');
+  it("hides unknown error details behind a generic 500", async () => {
+    const res = await request(testApp()).get("/crash");
     expect(res.status).toBe(500);
-    expect(res.body.error.code).toBe('INTERNAL');
-    expect(JSON.stringify(res.body)).not.toContain('secret internal detail');
+    expect(res.body.error.code).toBe("INTERNAL");
+    expect(JSON.stringify(res.body)).not.toContain("secret internal detail");
   });
 
-  it('returns 404 JSON for unknown routes', async () => {
-    const res = await request(testApp()).get('/nope');
+  it("returns 404 JSON for unknown routes", async () => {
+    const res = await request(testApp()).get("/nope");
     expect(res.status).toBe(404);
-    expect(res.body.error.code).toBe('NOT_FOUND');
+    expect(res.body.error.code).toBe("NOT_FOUND");
   });
 
-  it('returns 400 BAD_JSON for a malformed body', async () => {
-    const res = await request(testApp()).post('/echo').set('content-type', 'application/json').send('{"a":');
+  it("returns 400 BAD_JSON for a malformed body", async () => {
+    const res = await request(testApp())
+      .post("/echo")
+      .set("content-type", "application/json")
+      .send('{"a":');
     expect(res.status).toBe(400);
-    expect(res.body.error.code).toBe('BAD_JSON');
+    expect(res.body.error.code).toBe("BAD_JSON");
   });
 });
 
-describe('yearSchema via validate()', () => {
+describe("yearSchema via validate()", () => {
   const thisYear = new Date().getUTCFullYear();
 
   it('resolves "current" to this year', async () => {
-    const res = await request(testApp()).get('/year/current');
+    const res = await request(testApp()).get("/year/current");
     expect(res.body).toEqual({ year: thisYear });
   });
 
-  it('accepts a past season as a number', async () => {
-    const res = await request(testApp()).get('/year/2021');
+  it("accepts a past season as a number", async () => {
+    const res = await request(testApp()).get("/year/2021");
     expect(res.body).toEqual({ year: 2021 });
   });
 
-  it.each(['abc', '1949', String(thisYear + 1), '2020.5'])('rejects %s with 400 VALIDATION', async (year) => {
-    const res = await request(testApp()).get(`/year/${year}`);
-    expect(res.status).toBe(400);
-    expect(res.body.error.code).toBe('VALIDATION');
-  });
+  it.each(["abc", "1949", String(thisYear + 1), "2020.5"])(
+    "rejects %s with 400 VALIDATION",
+    async (year) => {
+      const res = await request(testApp()).get(`/year/${year}`);
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe("VALIDATION");
+    },
+  );
 });
 ```
 
@@ -615,6 +662,7 @@ Expected: FAIL, cannot find module `../src/errors.ts`.
 - [ ] **Step 3: Implement**
 
 `server/src/errors.ts`:
+
 ```ts
 export class AppError extends Error {
   readonly status: number;
@@ -629,44 +677,62 @@ export class AppError extends Error {
 ```
 
 `server/src/middleware/errorHandler.ts`:
+
 ```ts
-import type { ErrorRequestHandler, RequestHandler } from 'express';
-import { ZodError } from 'zod';
-import { AppError } from '../errors.ts';
+import type { ErrorRequestHandler, RequestHandler } from "express";
+import { ZodError } from "zod";
+import { AppError } from "../errors.ts";
 
 export const notFound: RequestHandler = (_req, _res, next) => {
-  next(new AppError(404, 'NOT_FOUND', 'Route not found'));
+  next(new AppError(404, "NOT_FOUND", "Route not found"));
 };
 
 export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   if (err instanceof AppError) {
-    res.status(err.status).json({ error: { code: err.code, message: err.message } });
+    res
+      .status(err.status)
+      .json({ error: { code: err.code, message: err.message } });
     return;
   }
   if (err instanceof ZodError) {
-    const message = err.issues.map((i) => `${i.path.join('.') || 'input'}: ${i.message}`).join('; ');
-    res.status(400).json({ error: { code: 'VALIDATION', message } });
+    const message = err.issues
+      .map((i) => `${i.path.join(".") || "input"}: ${i.message}`)
+      .join("; ");
+    res.status(400).json({ error: { code: "VALIDATION", message } });
     return;
   }
-  if (err?.type === 'entity.parse.failed') {
-    res.status(400).json({ error: { code: 'BAD_JSON', message: 'Malformed JSON body' } });
+  if (err?.type === "entity.parse.failed") {
+    res
+      .status(400)
+      .json({ error: { code: "BAD_JSON", message: "Malformed JSON body" } });
     return;
   }
   console.error(err);
-  res.status(500).json({ error: { code: 'INTERNAL', message: 'Something went wrong' } });
+  res
+    .status(500)
+    .json({ error: { code: "INTERNAL", message: "Something went wrong" } });
 };
 ```
 
 `server/src/middleware/validate.ts`:
+
 ```ts
-import type { RequestHandler } from 'express';
-import type { ZodType } from 'zod';
+import type { RequestHandler } from "express";
+import type { ZodType } from "zod";
 
 /** Parses params/query/body with zod; results go to res.locals because Express 5's req.query is read-only. */
-export function validate(schemas: { params?: ZodType; query?: ZodType; body?: ZodType }): RequestHandler {
+export function validate(schemas: {
+  params?: ZodType;
+  query?: ZodType;
+  body?: ZodType;
+}): RequestHandler {
   return (req, res, next) => {
-    res.locals.params = schemas.params ? schemas.params.parse(req.params) : req.params;
-    res.locals.query = schemas.query ? schemas.query.parse(req.query) : req.query;
+    res.locals.params = schemas.params
+      ? schemas.params.parse(req.params)
+      : req.params;
+    res.locals.query = schemas.query
+      ? schemas.query.parse(req.query)
+      : req.query;
     res.locals.body = schemas.body ? schemas.body.parse(req.body) : req.body;
     next();
   };
@@ -674,26 +740,33 @@ export function validate(schemas: { params?: ZodType; query?: ZodType; body?: Zo
 ```
 
 `server/src/schemas.ts`:
+
 ```ts
-import { z } from 'zod';
+import { z } from "zod";
 
 const thisYear = () => new Date().getUTCFullYear();
 
 export const yearSchema = z
-  .union([z.literal('current').transform(() => thisYear()), z.coerce.number().int().min(1950)])
-  .refine((y) => y <= thisYear(), { message: 'Season is in the future' });
+  .union([
+    z.literal("current").transform(() => thisYear()),
+    z.coerce.number().int().min(1950),
+  ])
+  .refine((y) => y <= thisYear(), { message: "Season is in the future" });
 
-export const idSchema = z.string().regex(/^[a-z0-9_]{1,64}$/, 'Invalid id');
+export const idSchema = z.string().regex(/^[a-z0-9_]{1,64}$/, "Invalid id");
 ```
 
 Modify `server/src/app.ts`: add the imports and register the 404 + error handler last:
+
 ```ts
-import { errorHandler, notFound } from './middleware/errorHandler.ts';
+import { errorHandler, notFound } from "./middleware/errorHandler.ts";
 ```
+
 and, just before `return app;`:
+
 ```ts
-  app.use('/api', notFound);
-  app.use(errorHandler);
+app.use("/api", notFound);
+app.use(errorHandler);
 ```
 
 - [ ] **Step 4: Run tests**
@@ -713,21 +786,24 @@ git commit -m "feat(server): JSON error handling and zod validation middleware"
 ### Task 3: Rate-limited request queue
 
 **Files:**
+
 - Create: `server/src/services/queue.ts`
 - Test: `server/test/queue.test.ts`
 
 **Interfaces:**
+
 - Produces:
   - `class HttpError extends Error { status: number; retryAfterMs: number | null }`
   - `fetchJson<T>(url: string): Promise<T>` — throws `HttpError` on non-2xx, 15 s timeout
-  - `createQueue(opts: QueueOptions): { run<T>(key: string, task: () => Promise<T>): Promise<T> }` — limits task *starts* to `perSecond` per 1 s and `perWindow` per `windowMs`; concurrent `run` calls with the same `key` share one promise; on `HttpError` 429 it retries up to `retries` (default 3) times, waiting `Retry-After` or 1 s / 2 s / 4 s.
+  - `createQueue(opts: QueueOptions): { run<T>(key: string, task: () => Promise<T>): Promise<T> }` — limits task _starts_ to `perSecond` per 1 s and `perWindow` per `windowMs`; concurrent `run` calls with the same `key` share one promise; on `HttpError` 429 it retries up to `retries` (default 3) times, waiting `Retry-After` or 1 s / 2 s / 4 s.
 
 - [ ] **Step 1: Write the failing tests**
 
 `server/test/queue.test.ts`:
+
 ```ts
-import { describe, expect, it, vi } from 'vitest';
-import { createQueue, HttpError } from '../src/services/queue.ts';
+import { describe, expect, it, vi } from "vitest";
+import { createQueue, HttpError } from "../src/services/queue.ts";
 
 /** A fake clock: sleep() advances time instantly so tests run fast and deterministically. */
 function fakeClock() {
@@ -735,60 +811,98 @@ function fakeClock() {
   return { now: () => t, sleep: async (ms: number) => void (t += ms) };
 }
 
-describe('createQueue', () => {
-  it('limits starts per second and per window', async () => {
+describe("createQueue", () => {
+  it("limits starts per second and per window", async () => {
     const clock = fakeClock();
-    const q = createQueue({ perSecond: 3, perWindow: 5, windowMs: 60_000, ...clock });
+    const q = createQueue({
+      perSecond: 3,
+      perWindow: 5,
+      windowMs: 60_000,
+      ...clock,
+    });
     const starts: number[] = [];
-    await Promise.all(Array.from({ length: 6 }, (_, i) => q.run(`k${i}`, async () => void starts.push(clock.now()))));
+    await Promise.all(
+      Array.from({ length: 6 }, (_, i) =>
+        q.run(`k${i}`, async () => void starts.push(clock.now())),
+      ),
+    );
     expect(starts.slice(0, 3)).toEqual([0, 0, 0]);
     expect(starts[3]).toBeGreaterThanOrEqual(1000); // 4th waits for the per-second limit
     expect(starts[5]).toBeGreaterThanOrEqual(60_000); // 6th waits for the window
   });
 
-  it('shares one in-flight promise per key', async () => {
-    const q = createQueue({ perSecond: 10, perWindow: 100, windowMs: 60_000, ...fakeClock() });
+  it("shares one in-flight promise per key", async () => {
+    const q = createQueue({
+      perSecond: 10,
+      perWindow: 100,
+      windowMs: 60_000,
+      ...fakeClock(),
+    });
     const task = vi.fn(async () => 42);
-    const [a, b] = await Promise.all([q.run('same', task), q.run('same', task)]);
+    const [a, b] = await Promise.all([
+      q.run("same", task),
+      q.run("same", task),
+    ]);
     expect([a, b]).toEqual([42, 42]);
     expect(task).toHaveBeenCalledTimes(1);
   });
 
-  it('runs the same key again once the first call has settled', async () => {
-    const q = createQueue({ perSecond: 10, perWindow: 100, windowMs: 60_000, ...fakeClock() });
+  it("runs the same key again once the first call has settled", async () => {
+    const q = createQueue({
+      perSecond: 10,
+      perWindow: 100,
+      windowMs: 60_000,
+      ...fakeClock(),
+    });
     const task = vi.fn(async () => 1);
-    await q.run('k', task);
-    await q.run('k', task);
+    await q.run("k", task);
+    await q.run("k", task);
     expect(task).toHaveBeenCalledTimes(2);
   });
 
-  it('retries a 429 using Retry-After, then succeeds', async () => {
+  it("retries a 429 using Retry-After, then succeeds", async () => {
     const clock = fakeClock();
-    const q = createQueue({ perSecond: 10, perWindow: 100, windowMs: 60_000, ...clock });
+    const q = createQueue({
+      perSecond: 10,
+      perWindow: 100,
+      windowMs: 60_000,
+      ...clock,
+    });
     const task = vi
       .fn<() => Promise<string>>()
-      .mockRejectedValueOnce(new HttpError(429, 5000, 'slow down'))
-      .mockResolvedValueOnce('ok');
-    await expect(q.run('k', task)).resolves.toBe('ok');
+      .mockRejectedValueOnce(new HttpError(429, 5000, "slow down"))
+      .mockResolvedValueOnce("ok");
+    await expect(q.run("k", task)).resolves.toBe("ok");
     expect(task).toHaveBeenCalledTimes(2);
     expect(clock.now()).toBeGreaterThanOrEqual(5000);
   });
 
-  it('gives up after the retry budget', async () => {
-    const q = createQueue({ perSecond: 10, perWindow: 100, windowMs: 60_000, retries: 2, ...fakeClock() });
-    const task = vi.fn(async () => {
-      throw new HttpError(429, null, 'slow down');
+  it("gives up after the retry budget", async () => {
+    const q = createQueue({
+      perSecond: 10,
+      perWindow: 100,
+      windowMs: 60_000,
+      retries: 2,
+      ...fakeClock(),
     });
-    await expect(q.run('k', task)).rejects.toBeInstanceOf(HttpError);
+    const task = vi.fn(async () => {
+      throw new HttpError(429, null, "slow down");
+    });
+    await expect(q.run("k", task)).rejects.toBeInstanceOf(HttpError);
     expect(task).toHaveBeenCalledTimes(3);
   });
 
-  it('does not retry other errors', async () => {
-    const q = createQueue({ perSecond: 10, perWindow: 100, windowMs: 60_000, ...fakeClock() });
-    const task = vi.fn(async () => {
-      throw new HttpError(500, null, 'boom');
+  it("does not retry other errors", async () => {
+    const q = createQueue({
+      perSecond: 10,
+      perWindow: 100,
+      windowMs: 60_000,
+      ...fakeClock(),
     });
-    await expect(q.run('k', task)).rejects.toThrow('boom');
+    const task = vi.fn(async () => {
+      throw new HttpError(500, null, "boom");
+    });
+    await expect(q.run("k", task)).rejects.toThrow("boom");
     expect(task).toHaveBeenCalledTimes(1);
   });
 });
@@ -802,6 +916,7 @@ Expected: FAIL, cannot find module `../src/services/queue.ts`.
 - [ ] **Step 3: Implement**
 
 `server/src/services/queue.ts`:
+
 ```ts
 export class HttpError extends Error {
   readonly status: number;
@@ -815,10 +930,17 @@ export class HttpError extends Error {
 }
 
 export async function fetchJson<T>(url: string): Promise<T> {
-  const res = await fetch(url, { headers: { accept: 'application/json' }, signal: AbortSignal.timeout(15_000) });
+  const res = await fetch(url, {
+    headers: { accept: "application/json" },
+    signal: AbortSignal.timeout(15_000),
+  });
   if (!res.ok) {
-    const retryAfter = Number(res.headers.get('retry-after'));
-    throw new HttpError(res.status, retryAfter > 0 ? retryAfter * 1000 : null, `${res.status} from ${url}`);
+    const retryAfter = Number(res.headers.get("retry-after"));
+    throw new HttpError(
+      res.status,
+      retryAfter > 0 ? retryAfter * 1000 : null,
+      `${res.status} from ${url}`,
+    );
   }
   return (await res.json()) as T;
 }
@@ -834,7 +956,8 @@ export interface QueueOptions {
 
 export function createQueue(opts: QueueOptions) {
   const now = opts.now ?? Date.now;
-  const sleep = opts.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
+  const sleep =
+    opts.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
   const retries = opts.retries ?? 3;
   const starts: number[] = []; // start times inside the current window, oldest first
   const inflight = new Map<string, Promise<unknown>>();
@@ -843,14 +966,20 @@ export function createQueue(opts: QueueOptions) {
   async function takeSlot(): Promise<void> {
     for (;;) {
       const t = now();
-      while (starts.length > 0 && t - starts[0]! >= opts.windowMs) starts.shift();
+      while (starts.length > 0 && t - starts[0]! >= opts.windowMs)
+        starts.shift();
       const lastSecond = starts.filter((s) => t - s < 1000);
-      if (starts.length < opts.perWindow && lastSecond.length < opts.perSecond) {
+      if (
+        starts.length < opts.perWindow &&
+        lastSecond.length < opts.perSecond
+      ) {
         starts.push(t);
         return;
       }
-      const waitWindow = starts.length >= opts.perWindow ? starts[0]! + opts.windowMs - t : 0;
-      const waitSecond = lastSecond.length >= opts.perSecond ? lastSecond[0]! + 1000 - t : 0;
+      const waitWindow =
+        starts.length >= opts.perWindow ? starts[0]! + opts.windowMs - t : 0;
+      const waitSecond =
+        lastSecond.length >= opts.perSecond ? lastSecond[0]! + 1000 - t : 0;
       await sleep(Math.max(waitWindow, waitSecond, 1));
     }
   }
@@ -871,7 +1000,11 @@ export function createQueue(opts: QueueOptions) {
         try {
           return await task();
         } catch (err) {
-          if (err instanceof HttpError && err.status === 429 && attempt < retries) {
+          if (
+            err instanceof HttpError &&
+            err.status === 429 &&
+            attempt < retries
+          ) {
             await sleep(err.retryAfterMs ?? 1000 * 2 ** attempt);
             continue;
           }
@@ -904,11 +1037,13 @@ git commit -m "feat(server): rate-limited upstream queue with dedup and 429 back
 ### Task 4: Jolpica client and transforms
 
 **Files:**
+
 - Create: `server/src/services/jolpica.transform.ts`, `server/src/services/jolpica.ts`
 - Create fixtures: `server/test/fixtures/jolpica/*.json`
 - Test: `server/test/jolpica.transform.test.ts`
 
 **Interfaces:**
+
 - Consumes: `createQueue`, `fetchJson` (Task 3).
 - Produces:
   - `type MRData` (raw Jolpica envelope), `toRace(r): Race`, `toResultEntry(x): ResultEntry`, `toRaceResults(pages: MRData[], type: ResultType): RaceResult[]`, `toStandings(pages: MRData[], kind: StandingsKind): Standings | null`, `toDriver(d): Driver`, `toTeam(c): Team`
@@ -929,14 +1064,16 @@ curl -s "$J/2025/drivers.json?limit=100" -o 2025-drivers.json
 curl -s "$J/2025/constructors.json?limit=100" -o 2025-constructors.json
 cd -
 ```
+
 Expected: 8 files, each starting with `{"MRData":`. Values the tests rely on (checked 2026-10-15): round 1 Australian GP won by Norris (NOR, McLaren) from grid 1, 57 laps, `1:42:06.304`, fastest lap `1:22.167`, 25 points; Norris's Q3 in round 1 `1:15.096`; round 2 sprint won by Hamilton, 8 points; 24 races in 2025, round 2 (Chinese GP) has a Sprint at `2025-03-22T03:00:00Z`; final driver standings after round 24: Norris 423 points, 7 wins; constructors: McLaren 833 points, 14 wins.
 
 - [ ] **Step 2: Write the failing tests**
 
 `server/test/jolpica.transform.test.ts`:
+
 ```ts
-import { readFileSync } from 'node:fs';
-import { describe, expect, it } from 'vitest';
+import { readFileSync } from "node:fs";
+import { describe, expect, it } from "vitest";
 import {
   type MRData,
   toDriver,
@@ -944,103 +1081,168 @@ import {
   toRaceResults,
   toStandings,
   toTeam,
-} from '../src/services/jolpica.transform.ts';
+} from "../src/services/jolpica.transform.ts";
 
 const fixture = (name: string): MRData =>
-  JSON.parse(readFileSync(new URL(`./fixtures/jolpica/${name}.json`, import.meta.url), 'utf8')).MRData;
+  JSON.parse(
+    readFileSync(
+      new URL(`./fixtures/jolpica/${name}.json`, import.meta.url),
+      "utf8",
+    ),
+  ).MRData;
 
-describe('toRace', () => {
-  const races = fixture('2025-schedule').RaceTable!.Races.map(toRace);
+describe("toRace", () => {
+  const races = fixture("2025-schedule").RaceTable!.Races.map(toRace);
 
-  it('maps the season schedule', () => {
+  it("maps the season schedule", () => {
     expect(races).toHaveLength(24);
     expect(races[0]).toMatchObject({
       season: 2025,
       round: 1,
-      name: 'Australian Grand Prix',
-      circuit: { id: 'albert_park', locality: 'Melbourne', country: 'Australia' },
+      name: "Australian Grand Prix",
+      circuit: {
+        id: "albert_park",
+        locality: "Melbourne",
+        country: "Australia",
+      },
     });
   });
 
-  it('includes sprint sessions, sorted by time, ending with the race', () => {
+  it("includes sprint sessions, sorted by time, ending with the race", () => {
     const china = races[1]!;
-    expect(china.sessions.map((s) => s.type)).toEqual(['fp1', 'sprintQualifying', 'sprint', 'qualifying', 'race']);
-    expect(china.sessions.find((s) => s.type === 'sprint')?.startsAt).toBe('2025-03-22T03:00:00Z');
+    expect(china.sessions.map((s) => s.type)).toEqual([
+      "fp1",
+      "sprintQualifying",
+      "sprint",
+      "qualifying",
+      "race",
+    ]);
+    expect(china.sessions.find((s) => s.type === "sprint")?.startsAt).toBe(
+      "2025-03-22T03:00:00Z",
+    );
   });
 });
 
-describe('toRaceResults', () => {
-  it('maps race results', () => {
-    const [r] = toRaceResults([fixture('2025-1-results')], 'race');
-    expect(r).toMatchObject({ season: 2025, round: 1, type: 'race', raceName: 'Australian Grand Prix' });
+describe("toRaceResults", () => {
+  it("maps race results", () => {
+    const [r] = toRaceResults([fixture("2025-1-results")], "race");
+    expect(r).toMatchObject({
+      season: 2025,
+      round: 1,
+      type: "race",
+      raceName: "Australian Grand Prix",
+    });
     expect(r!.entries).toHaveLength(20);
     expect(r!.entries[0]).toMatchObject({
       position: 1,
-      driverId: 'norris',
-      driverCode: 'NOR',
-      driverName: 'Lando Norris',
-      teamId: 'mclaren',
-      teamName: 'McLaren',
+      driverId: "norris",
+      driverCode: "NOR",
+      driverName: "Lando Norris",
+      teamId: "mclaren",
+      teamName: "McLaren",
       grid: 1,
       laps: 57,
       points: 25,
-      time: '1:42:06.304',
-      fastestLap: '1:22.167',
+      time: "1:42:06.304",
+      fastestLap: "1:22.167",
     });
   });
 
-  it('maps qualifying times', () => {
-    const [r] = toRaceResults([fixture('2025-1-qualifying')], 'qualifying');
-    expect(r!.entries[0]).toMatchObject({ driverId: 'norris', q3: '1:15.096', points: 0 });
+  it("maps qualifying times", () => {
+    const [r] = toRaceResults([fixture("2025-1-qualifying")], "qualifying");
+    expect(r!.entries[0]).toMatchObject({
+      driverId: "norris",
+      q3: "1:15.096",
+      points: 0,
+    });
   });
 
-  it('maps sprint results', () => {
-    const [r] = toRaceResults([fixture('2025-2-sprint')], 'sprint');
-    expect(r!.entries[0]).toMatchObject({ driverId: 'hamilton', position: 1, points: 8 });
+  it("maps sprint results", () => {
+    const [r] = toRaceResults([fixture("2025-2-sprint")], "sprint");
+    expect(r!.entries[0]).toMatchObject({
+      driverId: "hamilton",
+      position: 1,
+      points: 8,
+    });
   });
 
-  it('merges a race split across two pages', () => {
-    const full = fixture('2025-1-results');
+  it("merges a race split across two pages", () => {
+    const full = fixture("2025-1-results");
     const race = full.RaceTable!.Races[0]!;
-    const page1: MRData = { ...full, RaceTable: { Races: [{ ...race, Results: race.Results!.slice(0, 12) }] } };
-    const page2: MRData = { ...full, RaceTable: { Races: [{ ...race, Results: race.Results!.slice(12) }] } };
-    const results = toRaceResults([page1, page2], 'race');
+    const page1: MRData = {
+      ...full,
+      RaceTable: { Races: [{ ...race, Results: race.Results!.slice(0, 12) }] },
+    };
+    const page2: MRData = {
+      ...full,
+      RaceTable: { Races: [{ ...race, Results: race.Results!.slice(12) }] },
+    };
+    const results = toRaceResults([page1, page2], "race");
     expect(results).toHaveLength(1);
     expect(results[0]!.entries).toHaveLength(20);
   });
 });
 
-describe('toStandings', () => {
-  it('maps driver standings', () => {
-    const s = toStandings([fixture('2025-driverstandings')], 'driver');
-    expect(s).toMatchObject({ season: 2025, afterRound: 24, kind: 'driver' });
-    expect(s!.entries[0]).toMatchObject({ position: 1, id: 'norris', name: 'Lando Norris', code: 'NOR', points: 423, wins: 7, teamId: 'mclaren' });
+describe("toStandings", () => {
+  it("maps driver standings", () => {
+    const s = toStandings([fixture("2025-driverstandings")], "driver");
+    expect(s).toMatchObject({ season: 2025, afterRound: 24, kind: "driver" });
+    expect(s!.entries[0]).toMatchObject({
+      position: 1,
+      id: "norris",
+      name: "Lando Norris",
+      code: "NOR",
+      points: 423,
+      wins: 7,
+      teamId: "mclaren",
+    });
   });
 
-  it('maps constructor standings', () => {
-    const s = toStandings([fixture('2025-constructorstandings')], 'constructor');
-    expect(s!.entries[0]).toMatchObject({ position: 1, id: 'mclaren', name: 'McLaren', points: 833, wins: 14, code: null });
+  it("maps constructor standings", () => {
+    const s = toStandings(
+      [fixture("2025-constructorstandings")],
+      "constructor",
+    );
+    expect(s!.entries[0]).toMatchObject({
+      position: 1,
+      id: "mclaren",
+      name: "McLaren",
+      points: 833,
+      wins: 14,
+      code: null,
+    });
   });
 
-  it('returns null when there are no standings yet', () => {
-    expect(toStandings([{ total: '0', StandingsTable: { StandingsLists: [] } }], 'driver')).toBeNull();
+  it("returns null when there are no standings yet", () => {
+    expect(
+      toStandings(
+        [{ total: "0", StandingsTable: { StandingsLists: [] } }],
+        "driver",
+      ),
+    ).toBeNull();
   });
 });
 
-describe('toDriver / toTeam', () => {
-  it('maps drivers and teams', () => {
-    const d = fixture('2025-drivers').DriverTable!.Drivers.map(toDriver);
-    expect(d.find((x) => x.driverId === 'albon')).toEqual({
-      driverId: 'albon',
-      code: 'ALB',
+describe("toDriver / toTeam", () => {
+  it("maps drivers and teams", () => {
+    const d = fixture("2025-drivers").DriverTable!.Drivers.map(toDriver);
+    expect(d.find((x) => x.driverId === "albon")).toEqual({
+      driverId: "albon",
+      code: "ALB",
       number: 23,
-      givenName: 'Alexander',
-      familyName: 'Albon',
-      nationality: 'Thai',
-      dateOfBirth: '1996-03-23',
+      givenName: "Alexander",
+      familyName: "Albon",
+      nationality: "Thai",
+      dateOfBirth: "1996-03-23",
     });
-    const t = fixture('2025-constructors').ConstructorTable!.Constructors.map(toTeam);
-    expect(t.find((x) => x.teamId === 'alpine')).toEqual({ teamId: 'alpine', name: 'Alpine F1 Team', nationality: 'French', colour: null });
+    const t =
+      fixture("2025-constructors").ConstructorTable!.Constructors.map(toTeam);
+    expect(t.find((x) => x.teamId === "alpine")).toEqual({
+      teamId: "alpine",
+      name: "Alpine F1 Team",
+      nationality: "French",
+      colour: null,
+    });
   });
 });
 ```
@@ -1053,6 +1255,7 @@ Expected: FAIL, cannot find module `../src/services/jolpica.transform.ts`.
 - [ ] **Step 4: Implement the transforms**
 
 `server/src/services/jolpica.transform.ts`:
+
 ```ts
 import type {
   Driver,
@@ -1066,7 +1269,7 @@ import type {
   Standings,
   StandingsKind,
   Team,
-} from '@f1/shared';
+} from "@f1/shared";
 
 // Minimal shapes of the Jolpica (Ergast-compatible) JSON that we read.
 export interface JDriver {
@@ -1150,18 +1353,19 @@ export interface MRData {
   ConstructorTable?: { Constructors: JConstructor[] };
 }
 
-const int = (s: string | undefined): number | null => (s === undefined || s === '' || Number.isNaN(Number(s)) ? null : Number(s));
-const iso = (w: JWhen): string => `${w.date}T${w.time ?? '00:00:00Z'}`;
+const int = (s: string | undefined): number | null =>
+  s === undefined || s === "" || Number.isNaN(Number(s)) ? null : Number(s);
+const iso = (w: JWhen): string => `${w.date}T${w.time ?? "00:00:00Z"}`;
 const fullName = (d: JDriver): string => `${d.givenName} ${d.familyName}`;
 
 const SESSION_KEYS: [keyof JRace, SessionType][] = [
-  ['FirstPractice', 'fp1'],
-  ['SecondPractice', 'fp2'],
-  ['ThirdPractice', 'fp3'],
-  ['SprintShootout', 'sprintQualifying'],
-  ['SprintQualifying', 'sprintQualifying'],
-  ['Sprint', 'sprint'],
-  ['Qualifying', 'qualifying'],
+  ["FirstPractice", "fp1"],
+  ["SecondPractice", "fp2"],
+  ["ThirdPractice", "fp3"],
+  ["SprintShootout", "sprintQualifying"],
+  ["SprintQualifying", "sprintQualifying"],
+  ["Sprint", "sprint"],
+  ["Qualifying", "qualifying"],
 ];
 
 export function toRace(r: JRace): Race {
@@ -1170,7 +1374,7 @@ export function toRace(r: JRace): Race {
     const when = r[key] as JWhen | undefined;
     if (when?.date) sessions.push({ type, startsAt: iso(when) });
   }
-  sessions.push({ type: 'race', startsAt: iso(r) });
+  sessions.push({ type: "race", startsAt: iso(r) });
   sessions.sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
   const loc = r.Circuit.Location;
   return {
@@ -1192,7 +1396,7 @@ export function toRace(r: JRace): Race {
 export function toResultEntry(x: JResult): ResultEntry {
   return {
     position: int(x.position),
-    positionText: x.positionText ?? x.position ?? '',
+    positionText: x.positionText ?? x.position ?? "",
     number: int(x.number),
     driverId: x.Driver.driverId,
     driverCode: x.Driver.code ?? null,
@@ -1211,7 +1415,11 @@ export function toResultEntry(x: JResult): ResultEntry {
   };
 }
 
-const RESULT_LIST = { race: 'Results', sprint: 'SprintResults', qualifying: 'QualifyingResults' } as const;
+const RESULT_LIST = {
+  race: "Results",
+  sprint: "SprintResults",
+  qualifying: "QualifyingResults",
+} as const;
 
 /** Jolpica paginates by result row, so one race can be split across pages: merge by round. */
 export function toRaceResults(pages: MRData[], type: ResultType): RaceResult[] {
@@ -1219,7 +1427,13 @@ export function toRaceResults(pages: MRData[], type: ResultType): RaceResult[] {
   for (const page of pages) {
     for (const r of page.RaceTable?.Races ?? []) {
       const round = Number(r.round);
-      const merged = byRound.get(round) ?? { season: Number(r.season), round, type, raceName: r.raceName, entries: [] };
+      const merged = byRound.get(round) ?? {
+        season: Number(r.season),
+        round,
+        type,
+        raceName: r.raceName,
+        entries: [],
+      };
       merged.entries.push(...(r[RESULT_LIST[type]] ?? []).map(toResultEntry));
       byRound.set(round, merged);
     }
@@ -1227,11 +1441,14 @@ export function toRaceResults(pages: MRData[], type: ResultType): RaceResult[] {
   return [...byRound.values()].sort((a, b) => a.round - b.round);
 }
 
-export function toStandings(pages: MRData[], kind: StandingsKind): Standings | null {
+export function toStandings(
+  pages: MRData[],
+  kind: StandingsKind,
+): Standings | null {
   const list = pages[0]?.StandingsTable?.StandingsLists[0];
   if (!list) return null;
   const entries: StandingEntry[] =
-    kind === 'driver'
+    kind === "driver"
       ? (list.DriverStandings ?? []).map((s) => {
           const team = s.Constructors.at(-1); // a driver who switched teams lists all of them; the last is current
           return {
@@ -1255,7 +1472,12 @@ export function toStandings(pages: MRData[], kind: StandingsKind): Standings | n
           teamId: s.Constructor.constructorId,
           teamName: s.Constructor.name,
         }));
-  return { season: Number(list.season), afterRound: Number(list.round), kind, entries };
+  return {
+    season: Number(list.season),
+    afterRound: Number(list.round),
+    kind,
+    entries,
+  };
 }
 
 export const toDriver = (d: JDriver): Driver => ({
@@ -1284,49 +1506,98 @@ Expected: all PASS. If a fixture value differs because Jolpica corrected histori
 - [ ] **Step 6: Implement the paginated client**
 
 `server/src/services/jolpica.ts`:
-```ts
-import type { Driver, Race, RaceResult, ResultType, Standings, StandingsKind, Team } from '@f1/shared';
-import { type MRData, toDriver, toRace, toRaceResults, toStandings, toTeam } from './jolpica.transform.ts';
-import { createQueue, fetchJson } from './queue.ts';
 
-const BASE = 'https://api.jolpi.ca/ergast/f1';
+```ts
+import type {
+  Driver,
+  Race,
+  RaceResult,
+  ResultType,
+  Standings,
+  StandingsKind,
+  Team,
+} from "@f1/shared";
+import {
+  type MRData,
+  toDriver,
+  toRace,
+  toRaceResults,
+  toStandings,
+  toTeam,
+} from "./jolpica.transform.ts";
+import { createQueue, fetchJson } from "./queue.ts";
+
+const BASE = "https://api.jolpi.ca/ergast/f1";
 const PAGE = 100;
 // Jolpica limits (docs/rate_limits.md): 4 requests/second burst, 500 requests/hour.
-const queue = createQueue({ perSecond: 4, perWindow: 500, windowMs: 3_600_000 });
+const queue = createQueue({
+  perSecond: 4,
+  perWindow: 500,
+  windowMs: 3_600_000,
+});
 
 function page(path: string, offset: number): Promise<MRData> {
   const url = `${BASE}/${path}.json?limit=${PAGE}&offset=${offset}`;
-  return queue.run(url, async () => (await fetchJson<{ MRData: MRData }>(url)).MRData);
+  return queue.run(
+    url,
+    async () => (await fetchJson<{ MRData: MRData }>(url)).MRData,
+  );
 }
 
 async function allPages(path: string): Promise<MRData[]> {
   const first = await page(path, 0);
   const pages = [first];
-  for (let offset = PAGE; offset < Number(first.total); offset += PAGE) pages.push(await page(path, offset));
+  for (let offset = PAGE; offset < Number(first.total); offset += PAGE)
+    pages.push(await page(path, offset));
   return pages;
 }
 
-const RESULT_PATH: Record<ResultType, string> = { race: 'results', sprint: 'sprint', qualifying: 'qualifying' };
+const RESULT_PATH: Record<ResultType, string> = {
+  race: "results",
+  sprint: "sprint",
+  qualifying: "qualifying",
+};
 
 export const jolpica = {
   async schedule(season: number): Promise<Race[]> {
-    return (await allPages(`${season}`)).flatMap((p) => p.RaceTable?.Races ?? []).map(toRace);
+    return (await allPages(`${season}`))
+      .flatMap((p) => p.RaceTable?.Races ?? [])
+      .map(toRace);
   },
-  async results(season: number, round: number, type: ResultType): Promise<RaceResult | null> {
-    return toRaceResults(await allPages(`${season}/${round}/${RESULT_PATH[type]}`), type)[0] ?? null;
+  async results(
+    season: number,
+    round: number,
+    type: ResultType,
+  ): Promise<RaceResult | null> {
+    return (
+      toRaceResults(
+        await allPages(`${season}/${round}/${RESULT_PATH[type]}`),
+        type,
+      )[0] ?? null
+    );
   },
   async seasonResults(season: number, type: ResultType): Promise<RaceResult[]> {
-    return toRaceResults(await allPages(`${season}/${RESULT_PATH[type]}`), type);
+    return toRaceResults(
+      await allPages(`${season}/${RESULT_PATH[type]}`),
+      type,
+    );
   },
-  async standings(season: number, kind: StandingsKind): Promise<Standings | null> {
-    const path = kind === 'driver' ? 'driverstandings' : 'constructorstandings';
+  async standings(
+    season: number,
+    kind: StandingsKind,
+  ): Promise<Standings | null> {
+    const path = kind === "driver" ? "driverstandings" : "constructorstandings";
     return toStandings(await allPages(`${season}/${path}`), kind);
   },
   async drivers(season: number): Promise<Driver[]> {
-    return (await allPages(`${season}/drivers`)).flatMap((p) => p.DriverTable?.Drivers ?? []).map(toDriver);
+    return (await allPages(`${season}/drivers`))
+      .flatMap((p) => p.DriverTable?.Drivers ?? [])
+      .map(toDriver);
   },
   async teams(season: number): Promise<Team[]> {
-    return (await allPages(`${season}/constructors`)).flatMap((p) => p.ConstructorTable?.Constructors ?? []).map(toTeam);
+    return (await allPages(`${season}/constructors`))
+      .flatMap((p) => p.ConstructorTable?.Constructors ?? [])
+      .map(toTeam);
   },
 };
 ```
@@ -1336,6 +1607,7 @@ export const jolpica = {
 ```bash
 cd server && node -e "import('./src/services/jolpica.ts').then(async ({ jolpica }) => { const r = await jolpica.seasonResults(2025, 'race'); console.log(r.length, r[0].entries.length); })" && cd ..
 ```
+
 Expected: `24 20` (24 rounds; merged across 5 pages).
 
 - [ ] **Step 8: Typecheck and commit**
@@ -1351,12 +1623,14 @@ git commit -m "feat(server): Jolpica client with pagination merge and transforms
 ### Task 5: Mongo models and the cache layer
 
 **Files:**
+
 - Create: `server/src/models/Race.ts`, `RaceResult.ts`, `Standings.ts`, `Driver.ts`, `Team.ts`, `CacheMeta.ts`
 - Create: `server/src/services/cache.ts`, `server/src/services/f1data.ts`
 - Create: `server/test/db.ts`
 - Test: `server/test/cache.test.ts`, `server/test/f1data.test.ts`
 
 **Interfaces:**
+
 - Consumes: `jolpica` (Task 4), `AppError` (Task 2).
 - Produces:
   - `isStale(season: number, fetchedAt: Date, now: Date): boolean`
@@ -1368,78 +1642,100 @@ git commit -m "feat(server): Jolpica client with pagination merge and transforms
 - [ ] **Step 1: Write the failing cache tests**
 
 `server/test/cache.test.ts`:
+
 ```ts
-import { describe, expect, it, vi } from 'vitest';
-import { AppError } from '../src/errors.ts';
-import { cachedQuery, isStale } from '../src/services/cache.ts';
+import { describe, expect, it, vi } from "vitest";
+import { AppError } from "../src/errors.ts";
+import { cachedQuery, isStale } from "../src/services/cache.ts";
 
 const at = (iso: string) => new Date(iso);
 
-describe('isStale', () => {
-  const now = at('2026-10-15T12:00:00Z');
+describe("isStale", () => {
+  const now = at("2026-10-15T12:00:00Z");
 
-  it('never expires a past season fetched after it ended', () => {
-    expect(isStale(2024, at('2025-01-10T00:00:00Z'), now)).toBe(false);
+  it("never expires a past season fetched after it ended", () => {
+    expect(isStale(2024, at("2025-01-10T00:00:00Z"), now)).toBe(false);
   });
 
-  it('expires a past season that was fetched while it was still running', () => {
-    expect(isStale(2025, at('2025-12-01T00:00:00Z'), now)).toBe(true);
+  it("expires a past season that was fetched while it was still running", () => {
+    expect(isStale(2025, at("2025-12-01T00:00:00Z"), now)).toBe(true);
   });
 
-  it('expires current-season data after one hour', () => {
-    expect(isStale(2026, at('2026-10-15T11:30:00Z'), now)).toBe(false);
-    expect(isStale(2026, at('2026-10-15T10:59:00Z'), now)).toBe(true);
+  it("expires current-season data after one hour", () => {
+    expect(isStale(2026, at("2026-10-15T11:30:00Z"), now)).toBe(false);
+    expect(isStale(2026, at("2026-10-15T10:59:00Z"), now)).toBe(true);
   });
 });
 
-describe('cachedQuery', () => {
-  const now = () => at('2026-10-15T12:00:00Z');
-  const fresh = { data: 'cached', fetchedAt: at('2026-10-15T11:50:00Z') };
-  const old = { data: 'cached', fetchedAt: at('2026-10-15T09:00:00Z') };
+describe("cachedQuery", () => {
+  const now = () => at("2026-10-15T12:00:00Z");
+  const fresh = { data: "cached", fetchedAt: at("2026-10-15T11:50:00Z") };
+  const old = { data: "cached", fetchedAt: at("2026-10-15T09:00:00Z") };
 
-  it('returns fresh cache without calling upstream', async () => {
+  it("returns fresh cache without calling upstream", async () => {
     const fetch = vi.fn();
-    const r = await cachedQuery({ season: 2026, load: async () => fresh, fetch, save: vi.fn(), now });
-    expect(r).toEqual({ data: 'cached', stale: false });
+    const r = await cachedQuery({
+      season: 2026,
+      load: async () => fresh,
+      fetch,
+      save: vi.fn(),
+      now,
+    });
+    expect(r).toEqual({ data: "cached", stale: false });
     expect(fetch).not.toHaveBeenCalled();
   });
 
-  it('refetches and saves when the cache is stale', async () => {
+  it("refetches and saves when the cache is stale", async () => {
     const save = vi.fn();
-    const r = await cachedQuery({ season: 2026, load: async () => old, fetch: async () => 'new', save, now });
-    expect(r).toEqual({ data: 'new', stale: false });
-    expect(save).toHaveBeenCalledWith('new', now());
+    const r = await cachedQuery({
+      season: 2026,
+      load: async () => old,
+      fetch: async () => "new",
+      save,
+      now,
+    });
+    expect(r).toEqual({ data: "new", stale: false });
+    expect(save).toHaveBeenCalledWith("new", now());
   });
 
-  it('fetches when nothing is cached', async () => {
-    const r = await cachedQuery({ season: 2026, load: async () => null, fetch: async () => 'new', save: vi.fn(), now });
-    expect(r).toEqual({ data: 'new', stale: false });
+  it("fetches when nothing is cached", async () => {
+    const r = await cachedQuery({
+      season: 2026,
+      load: async () => null,
+      fetch: async () => "new",
+      save: vi.fn(),
+      now,
+    });
+    expect(r).toEqual({ data: "new", stale: false });
   });
 
-  it('serves the stale copy when upstream fails', async () => {
+  it("serves the stale copy when upstream fails", async () => {
     const r = await cachedQuery({
       season: 2026,
       load: async () => old,
       fetch: async () => {
-        throw new Error('down');
+        throw new Error("down");
       },
       save: vi.fn(),
       now,
     });
-    expect(r).toEqual({ data: 'cached', stale: true });
+    expect(r).toEqual({ data: "cached", stale: true });
   });
 
-  it('throws 503 UPSTREAM_UNAVAILABLE when upstream fails and nothing is cached', async () => {
+  it("throws 503 UPSTREAM_UNAVAILABLE when upstream fails and nothing is cached", async () => {
     const p = cachedQuery({
       season: 2026,
       load: async () => null,
       fetch: async () => {
-        throw new Error('down');
+        throw new Error("down");
       },
       save: vi.fn(),
       now,
     });
-    await expect(p).rejects.toMatchObject({ status: 503, code: 'UPSTREAM_UNAVAILABLE' });
+    await expect(p).rejects.toMatchObject({
+      status: 503,
+      code: "UPSTREAM_UNAVAILABLE",
+    });
     await expect(p).rejects.toBeInstanceOf(AppError);
   });
 });
@@ -1453,14 +1749,16 @@ Expected: FAIL, cannot find module `../src/services/cache.ts`.
 - [ ] **Step 3: Implement the cache layer**
 
 `server/src/services/cache.ts`:
+
 ```ts
-import { AppError } from '../errors.ts';
+import { AppError } from "../errors.ts";
 
 const HOUR = 3_600_000;
 
 /** A past season fetched after it ended never changes; anything else is refreshed hourly. */
 export function isStale(season: number, fetchedAt: Date, now: Date): boolean {
-  if (season < now.getUTCFullYear() && fetchedAt.getUTCFullYear() > season) return false;
+  if (season < now.getUTCFullYear() && fetchedAt.getUTCFullYear() > season)
+    return false;
   return now.getTime() - fetchedAt.getTime() > HOUR;
 }
 
@@ -1478,17 +1776,25 @@ export async function cachedQuery<T>(opts: {
 }): Promise<CacheResult<T>> {
   const now = (opts.now ?? (() => new Date()))();
   const cached = await opts.load();
-  if (cached && !isStale(opts.season, cached.fetchedAt, now)) return { data: cached.data, stale: false };
+  if (cached && !isStale(opts.season, cached.fetchedAt, now))
+    return { data: cached.data, stale: false };
 
   let fresh: T;
   try {
     fresh = await opts.fetch();
   } catch (err) {
     if (cached) {
-      console.warn('Upstream failed, serving stale cache:', (err as Error).message);
+      console.warn(
+        "Upstream failed, serving stale cache:",
+        (err as Error).message,
+      );
       return { data: cached.data, stale: true };
     }
-    throw new AppError(503, 'UPSTREAM_UNAVAILABLE', 'The F1 data source is unavailable right now. Please try again shortly.');
+    throw new AppError(
+      503,
+      "UPSTREAM_UNAVAILABLE",
+      "The F1 data source is unavailable right now. Please try again shortly.",
+    );
   }
   await opts.save(fresh, now);
   return { data: fresh, stale: false };
@@ -1503,9 +1809,10 @@ Expected: 8 PASS.
 - [ ] **Step 5: Models**
 
 `server/src/models/Race.ts`:
+
 ```ts
-import type { Race } from '@f1/shared';
-import { model, Schema } from 'mongoose';
+import type { Race } from "@f1/shared";
+import { model, Schema } from "mongoose";
 
 const RaceSchema = new Schema<Race>({
   season: { type: Number, required: true },
@@ -1513,22 +1820,38 @@ const RaceSchema = new Schema<Race>({
   name: { type: String, required: true },
   circuit: {
     type: new Schema(
-      { id: String, name: String, locality: String, country: String, lat: Number, long: Number },
+      {
+        id: String,
+        name: String,
+        locality: String,
+        country: String,
+        lat: Number,
+        long: Number,
+      },
       { _id: false },
     ),
     required: true,
   },
-  sessions: [new Schema({ type: { type: String, required: true }, startsAt: { type: String, required: true } }, { _id: false })],
+  sessions: [
+    new Schema(
+      {
+        type: { type: String, required: true },
+        startsAt: { type: String, required: true },
+      },
+      { _id: false },
+    ),
+  ],
 });
 RaceSchema.index({ season: 1, round: 1 }, { unique: true });
 
-export const RaceModel = model<Race>('Race', RaceSchema);
+export const RaceModel = model<Race>("Race", RaceSchema);
 ```
 
 `server/src/models/RaceResult.ts`:
+
 ```ts
-import type { RaceResult } from '@f1/shared';
-import { model, Schema } from 'mongoose';
+import type { RaceResult } from "@f1/shared";
+import { model, Schema } from "mongoose";
 
 const EntrySchema = new Schema(
   {
@@ -1556,40 +1879,58 @@ const EntrySchema = new Schema(
 const RaceResultSchema = new Schema<RaceResult>({
   season: { type: Number, required: true },
   round: { type: Number, required: true },
-  type: { type: String, enum: ['race', 'sprint', 'qualifying'], required: true },
+  type: {
+    type: String,
+    enum: ["race", "sprint", "qualifying"],
+    required: true,
+  },
   raceName: { type: String, required: true },
   entries: [EntrySchema],
 });
 RaceResultSchema.index({ season: 1, round: 1, type: 1 }, { unique: true });
 
-export const RaceResultModel = model<RaceResult>('RaceResult', RaceResultSchema);
+export const RaceResultModel = model<RaceResult>(
+  "RaceResult",
+  RaceResultSchema,
+);
 ```
 
 `server/src/models/Standings.ts`:
+
 ```ts
-import type { Standings } from '@f1/shared';
-import { model, Schema } from 'mongoose';
+import type { Standings } from "@f1/shared";
+import { model, Schema } from "mongoose";
 
 const StandingSchema = new Schema<Standings>({
   season: { type: Number, required: true },
   afterRound: { type: Number, required: true },
-  kind: { type: String, enum: ['driver', 'constructor'], required: true },
+  kind: { type: String, enum: ["driver", "constructor"], required: true },
   entries: [
     new Schema(
-      { position: Number, points: Number, wins: Number, id: String, name: String, code: String, teamId: String, teamName: String },
+      {
+        position: Number,
+        points: Number,
+        wins: Number,
+        id: String,
+        name: String,
+        code: String,
+        teamId: String,
+        teamName: String,
+      },
       { _id: false },
     ),
   ],
 });
 StandingSchema.index({ season: 1, kind: 1 }, { unique: true });
 
-export const StandingsModel = model<Standings>('Standings', StandingSchema);
+export const StandingsModel = model<Standings>("Standings", StandingSchema);
 ```
 
 `server/src/models/Driver.ts`:
+
 ```ts
-import type { Driver } from '@f1/shared';
-import { model, Schema } from 'mongoose';
+import type { Driver } from "@f1/shared";
+import { model, Schema } from "mongoose";
 
 export type SeasonDriver = Driver & { season: number };
 
@@ -1605,13 +1946,14 @@ const DriverSchema = new Schema<SeasonDriver>({
 });
 DriverSchema.index({ season: 1, driverId: 1 }, { unique: true });
 
-export const DriverModel = model<SeasonDriver>('Driver', DriverSchema);
+export const DriverModel = model<SeasonDriver>("Driver", DriverSchema);
 ```
 
 `server/src/models/Team.ts`:
+
 ```ts
-import type { Team } from '@f1/shared';
-import { model, Schema } from 'mongoose';
+import type { Team } from "@f1/shared";
+import { model, Schema } from "mongoose";
 
 export type SeasonTeam = Team & { season: number };
 
@@ -1624,12 +1966,13 @@ const TeamSchema = new Schema<SeasonTeam>({
 });
 TeamSchema.index({ season: 1, teamId: 1 }, { unique: true });
 
-export const TeamModel = model<SeasonTeam>('Team', TeamSchema);
+export const TeamModel = model<SeasonTeam>("Team", TeamSchema);
 ```
 
 `server/src/models/CacheMeta.ts`:
+
 ```ts
-import { model, Schema } from 'mongoose';
+import { model, Schema } from "mongoose";
 
 // One row per upstream fetch (e.g. "schedule:2025"), recording when it was last fetched.
 const CacheMetaSchema = new Schema({
@@ -1637,15 +1980,16 @@ const CacheMetaSchema = new Schema({
   fetchedAt: { type: Date, required: true },
 });
 
-export const CacheMeta = model('CacheMeta', CacheMetaSchema);
+export const CacheMeta = model("CacheMeta", CacheMetaSchema);
 ```
 
 - [ ] **Step 6: Test DB helper**
 
 `server/test/db.ts`:
+
 ```ts
-import mongoose from 'mongoose';
-import { MongoMemoryServer } from 'mongodb-memory-server';
+import mongoose from "mongoose";
+import { MongoMemoryServer } from "mongodb-memory-server";
 
 let mongod: MongoMemoryServer | undefined;
 
@@ -1656,7 +2000,9 @@ export async function startDb() {
 }
 
 export async function clearDb() {
-  await Promise.all(Object.values(mongoose.connection.collections).map((c) => c.deleteMany({})));
+  await Promise.all(
+    Object.values(mongoose.connection.collections).map((c) => c.deleteMany({})),
+  );
 }
 
 export async function stopDb() {
@@ -1668,24 +2014,49 @@ export async function stopDb() {
 - [ ] **Step 7: Write the failing f1data tests**
 
 `server/test/f1data.test.ts`:
-```ts
-import { readFileSync } from 'node:fs';
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { CacheMeta } from '../src/models/CacheMeta.ts';
-import { DriverModel } from '../src/models/Driver.ts';
-import { type MRData, toDriver, toRace } from '../src/services/jolpica.transform.ts';
-import { clearDb, startDb, stopDb } from './db.ts';
 
-vi.mock('../src/services/jolpica.ts', () => ({
-  jolpica: { schedule: vi.fn(), results: vi.fn(), seasonResults: vi.fn(), standings: vi.fn(), drivers: vi.fn(), teams: vi.fn() },
+```ts
+import { readFileSync } from "node:fs";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
+import { CacheMeta } from "../src/models/CacheMeta.ts";
+import { DriverModel } from "../src/models/Driver.ts";
+import {
+  type MRData,
+  toDriver,
+  toRace,
+} from "../src/services/jolpica.transform.ts";
+import { clearDb, startDb, stopDb } from "./db.ts";
+
+vi.mock("../src/services/jolpica.ts", () => ({
+  jolpica: {
+    schedule: vi.fn(),
+    results: vi.fn(),
+    seasonResults: vi.fn(),
+    standings: vi.fn(),
+    drivers: vi.fn(),
+    teams: vi.fn(),
+  },
 }));
-const { jolpica } = await import('../src/services/jolpica.ts');
-const { f1data } = await import('../src/services/f1data.ts');
+const { jolpica } = await import("../src/services/jolpica.ts");
+const { f1data } = await import("../src/services/f1data.ts");
 
 const fixture = (name: string): MRData =>
-  JSON.parse(readFileSync(new URL(`./fixtures/jolpica/${name}.json`, import.meta.url), 'utf8')).MRData;
-const schedule2025 = fixture('2025-schedule').RaceTable!.Races.map(toRace);
-const drivers2025 = fixture('2025-drivers').DriverTable!.Drivers.map(toDriver);
+  JSON.parse(
+    readFileSync(
+      new URL(`./fixtures/jolpica/${name}.json`, import.meta.url),
+      "utf8",
+    ),
+  ).MRData;
+const schedule2025 = fixture("2025-schedule").RaceTable!.Races.map(toRace);
+const drivers2025 = fixture("2025-drivers").DriverTable!.Drivers.map(toDriver);
 
 beforeAll(startDb);
 afterAll(stopDb);
@@ -1695,32 +2066,38 @@ beforeEach(async () => {
   vi.mocked(jolpica.drivers).mockReset();
 });
 
-describe('f1data', () => {
-  it('fetches once, then serves from Mongo', async () => {
+describe("f1data", () => {
+  it("fetches once, then serves from Mongo", async () => {
     vi.mocked(jolpica.schedule).mockResolvedValue(schedule2025);
     const first = await f1data.schedule(2025);
     const second = await f1data.schedule(2025);
     expect(first.data).toHaveLength(24);
     expect(second).toEqual({ data: first.data, stale: false });
-    expect(second.data[0]).not.toHaveProperty('_id');
+    expect(second.data[0]).not.toHaveProperty("_id");
     expect(jolpica.schedule).toHaveBeenCalledTimes(1);
   });
 
-  it('serves the stale copy with stale: true when Jolpica fails', async () => {
+  it("serves the stale copy with stale: true when Jolpica fails", async () => {
     vi.mocked(jolpica.drivers).mockResolvedValue(drivers2025);
     await f1data.drivers(2025);
     // pretend the cached copy is from mid-2025 so it counts as stale
-    await CacheMeta.updateOne({ key: 'drivers:2025' }, { $set: { fetchedAt: new Date('2025-06-01T00:00:00Z') } });
-    vi.mocked(jolpica.drivers).mockRejectedValue(new Error('down'));
+    await CacheMeta.updateOne(
+      { key: "drivers:2025" },
+      { $set: { fetchedAt: new Date("2025-06-01T00:00:00Z") } },
+    );
+    vi.mocked(jolpica.drivers).mockRejectedValue(new Error("down"));
     const r = await f1data.drivers(2025);
     expect(r.stale).toBe(true);
     expect(r.data.length).toBe(drivers2025.length);
   });
 
-  it('replaces a season list instead of duplicating it on refetch', async () => {
+  it("replaces a season list instead of duplicating it on refetch", async () => {
     vi.mocked(jolpica.drivers).mockResolvedValue(drivers2025);
     await f1data.drivers(2025);
-    await CacheMeta.updateOne({ key: 'drivers:2025' }, { $set: { fetchedAt: new Date('2025-06-01T00:00:00Z') } });
+    await CacheMeta.updateOne(
+      { key: "drivers:2025" },
+      { $set: { fetchedAt: new Date("2025-06-01T00:00:00Z") } },
+    );
     vi.mocked(jolpica.drivers).mockResolvedValue(drivers2025.slice(0, 5));
     await f1data.drivers(2025);
     expect(await DriverModel.countDocuments({ season: 2025 })).toBe(5);
@@ -1728,7 +2105,7 @@ describe('f1data', () => {
 
   it('caches "no results yet" as null', async () => {
     vi.mocked(jolpica.results).mockResolvedValue(null);
-    const r = await f1data.results(2026, 30, 'race');
+    const r = await f1data.results(2026, 30, "race");
     expect(r.data).toBeNull();
   });
 });
@@ -1742,17 +2119,26 @@ Expected: FAIL, cannot find module `../src/services/f1data.ts`.
 - [ ] **Step 9: Implement f1data**
 
 `server/src/services/f1data.ts`:
+
 ```ts
-import type { Driver, Race, RaceResult, ResultType, Standings, StandingsKind, Team } from '@f1/shared';
-import type { Model } from 'mongoose';
-import { CacheMeta } from '../models/CacheMeta.ts';
-import { DriverModel } from '../models/Driver.ts';
-import { RaceModel } from '../models/Race.ts';
-import { RaceResultModel } from '../models/RaceResult.ts';
-import { StandingsModel } from '../models/Standings.ts';
-import { TeamModel } from '../models/Team.ts';
-import { type CacheResult, cachedQuery } from './cache.ts';
-import { jolpica } from './jolpica.ts';
+import type {
+  Driver,
+  Race,
+  RaceResult,
+  ResultType,
+  Standings,
+  StandingsKind,
+  Team,
+} from "@f1/shared";
+import type { Model } from "mongoose";
+import { CacheMeta } from "../models/CacheMeta.ts";
+import { DriverModel } from "../models/Driver.ts";
+import { RaceModel } from "../models/Race.ts";
+import { RaceResultModel } from "../models/RaceResult.ts";
+import { StandingsModel } from "../models/Standings.ts";
+import { TeamModel } from "../models/Team.ts";
+import { type CacheResult, cachedQuery } from "./cache.ts";
+import { jolpica } from "./jolpica.ts";
 
 const HIDE = { _id: 0, __v: 0 } as const;
 
@@ -1772,7 +2158,11 @@ function withMeta<T>(
     fetch,
     save: async (data, fetchedAt) => {
       await save(data);
-      await CacheMeta.updateOne({ key }, { $set: { fetchedAt } }, { upsert: true });
+      await CacheMeta.updateOne(
+        { key },
+        { $set: { fetchedAt } },
+        { upsert: true },
+      );
     },
   });
 }
@@ -1788,7 +2178,11 @@ async function replaceAll<T extends object>(
     await model.deleteMany(scope);
     return;
   }
-  await model.bulkWrite(docs.map((d) => ({ replaceOne: { filter: keyOf(d), replacement: d, upsert: true } })) as never);
+  await model.bulkWrite(
+    docs.map((d) => ({
+      replaceOne: { filter: keyOf(d), replacement: d, upsert: true },
+    })) as never,
+  );
   await model.deleteMany({ ...scope, $nor: docs.map(keyOf) });
 }
 
@@ -1799,17 +2193,30 @@ export const f1data = {
       season,
       () => RaceModel.find({ season }, HIDE).sort({ round: 1 }).lean<Race[]>(),
       () => jolpica.schedule(season),
-      (races) => replaceAll(RaceModel, races, (r) => ({ season: r.season, round: r.round }), { season }),
+      (races) =>
+        replaceAll(
+          RaceModel,
+          races,
+          (r) => ({ season: r.season, round: r.round }),
+          { season },
+        ),
     ),
 
   results: (season: number, round: number, type: ResultType) =>
     withMeta<RaceResult | null>(
       `results:${season}:${round}:${type}`,
       season,
-      async () => (await RaceResultModel.findOne({ season, round, type }, HIDE).lean<RaceResult>()) ?? null,
+      async () =>
+        (await RaceResultModel.findOne(
+          { season, round, type },
+          HIDE,
+        ).lean<RaceResult>()) ?? null,
       () => jolpica.results(season, round, type),
       async (r) => {
-        if (r) await RaceResultModel.replaceOne({ season, round, type }, r, { upsert: true });
+        if (r)
+          await RaceResultModel.replaceOne({ season, round, type }, r, {
+            upsert: true,
+          });
       },
     ),
 
@@ -1817,19 +2224,35 @@ export const f1data = {
     withMeta<RaceResult[]>(
       `seasonResults:${season}:${type}`,
       season,
-      () => RaceResultModel.find({ season, type }, HIDE).sort({ round: 1 }).lean<RaceResult[]>(),
+      () =>
+        RaceResultModel.find({ season, type }, HIDE)
+          .sort({ round: 1 })
+          .lean<RaceResult[]>(),
       () => jolpica.seasonResults(season, type),
-      (list) => replaceAll(RaceResultModel, list, (r) => ({ season: r.season, round: r.round, type: r.type }), { season, type }),
+      (list) =>
+        replaceAll(
+          RaceResultModel,
+          list,
+          (r) => ({ season: r.season, round: r.round, type: r.type }),
+          { season, type },
+        ),
     ),
 
   standings: (season: number, kind: StandingsKind) =>
     withMeta<Standings | null>(
       `standings:${season}:${kind}`,
       season,
-      async () => (await StandingsModel.findOne({ season, kind }, HIDE).lean<Standings>()) ?? null,
+      async () =>
+        (await StandingsModel.findOne(
+          { season, kind },
+          HIDE,
+        ).lean<Standings>()) ?? null,
       () => jolpica.standings(season, kind),
       async (s) => {
-        if (s) await StandingsModel.replaceOne({ season, kind }, s, { upsert: true });
+        if (s)
+          await StandingsModel.replaceOne({ season, kind }, s, {
+            upsert: true,
+          });
       },
     ),
 
@@ -1837,7 +2260,10 @@ export const f1data = {
     withMeta<Driver[]>(
       `drivers:${season}`,
       season,
-      () => DriverModel.find({ season }, { ...HIDE, season: 0 }).sort({ familyName: 1 }).lean<Driver[]>(),
+      () =>
+        DriverModel.find({ season }, { ...HIDE, season: 0 })
+          .sort({ familyName: 1 })
+          .lean<Driver[]>(),
       () => jolpica.drivers(season),
       (drivers) =>
         replaceAll(
@@ -1852,7 +2278,10 @@ export const f1data = {
     withMeta<Team[]>(
       `teams:${season}`,
       season,
-      () => TeamModel.find({ season }, { ...HIDE, season: 0 }).sort({ name: 1 }).lean<Team[]>(),
+      () =>
+        TeamModel.find({ season }, { ...HIDE, season: 0 })
+          .sort({ name: 1 })
+          .lean<Team[]>(),
       () => jolpica.teams(season),
       (teams) =>
         replaceAll(
@@ -1882,11 +2311,13 @@ git commit -m "feat(server): Mongo models and cached data layer with stale fallb
 ### Task 6: Season REST endpoints (schedule, results, standings, drivers, teams)
 
 **Files:**
+
 - Create: `server/src/controllers/send.ts`, `server/src/controllers/seasons.ts`, `server/src/routes/seasons.ts`
 - Modify: `server/src/app.ts`
 - Test: `server/test/seasons.test.ts`
 
 **Interfaces:**
+
 - Consumes: `f1data` (Task 5), `validate`, `yearSchema`, `idSchema`, `AppError` (Task 2).
 - Produces:
   - `send<T>(res: Response, result: CacheResult<T>): void` — sets `X-Data-Stale: true` when stale, then `res.json(data)`
@@ -1901,24 +2332,52 @@ git commit -m "feat(server): Mongo models and cached data layer with stale fallb
 - [ ] **Step 1: Write the failing tests**
 
 `server/test/seasons.test.ts`:
-```ts
-import { readFileSync } from 'node:fs';
-import request from 'supertest';
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { type MRData, toDriver, toRace, toRaceResults, toStandings, toTeam } from '../src/services/jolpica.transform.ts';
-import { clearDb, startDb, stopDb } from './db.ts';
 
-vi.mock('../src/services/jolpica.ts', () => ({
-  jolpica: { schedule: vi.fn(), results: vi.fn(), seasonResults: vi.fn(), standings: vi.fn(), drivers: vi.fn(), teams: vi.fn() },
+```ts
+import { readFileSync } from "node:fs";
+import request from "supertest";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
+import {
+  type MRData,
+  toDriver,
+  toRace,
+  toRaceResults,
+  toStandings,
+  toTeam,
+} from "../src/services/jolpica.transform.ts";
+import { clearDb, startDb, stopDb } from "./db.ts";
+
+vi.mock("../src/services/jolpica.ts", () => ({
+  jolpica: {
+    schedule: vi.fn(),
+    results: vi.fn(),
+    seasonResults: vi.fn(),
+    standings: vi.fn(),
+    drivers: vi.fn(),
+    teams: vi.fn(),
+  },
 }));
-const { jolpica } = await import('../src/services/jolpica.ts');
-const { createApp } = await import('../src/app.ts');
+const { jolpica } = await import("../src/services/jolpica.ts");
+const { createApp } = await import("../src/app.ts");
 
 const fixture = (name: string): MRData =>
-  JSON.parse(readFileSync(new URL(`./fixtures/jolpica/${name}.json`, import.meta.url), 'utf8')).MRData;
-const schedule = fixture('2025-schedule').RaceTable!.Races.map(toRace);
-const round1 = toRaceResults([fixture('2025-1-results')], 'race');
-const sprint2 = toRaceResults([fixture('2025-2-sprint')], 'sprint');
+  JSON.parse(
+    readFileSync(
+      new URL(`./fixtures/jolpica/${name}.json`, import.meta.url),
+      "utf8",
+    ),
+  ).MRData;
+const schedule = fixture("2025-schedule").RaceTable!.Races.map(toRace);
+const round1 = toRaceResults([fixture("2025-1-results")], "race");
+const sprint2 = toRaceResults([fixture("2025-2-sprint")], "sprint");
 
 const app = createApp();
 beforeAll(startDb);
@@ -1926,91 +2385,135 @@ afterAll(stopDb);
 beforeEach(async () => {
   await clearDb();
   vi.mocked(jolpica.schedule).mockResolvedValue(schedule);
-  vi.mocked(jolpica.results).mockImplementation(async (_s, round) => (round === 1 ? round1[0]! : null));
-  vi.mocked(jolpica.seasonResults).mockImplementation(async (_s, type) => (type === 'race' ? round1 : sprint2));
-  vi.mocked(jolpica.standings).mockImplementation(async (_s, kind) =>
-    toStandings([fixture(kind === 'driver' ? '2025-driverstandings' : '2025-constructorstandings')], kind),
+  vi.mocked(jolpica.results).mockImplementation(async (_s, round) =>
+    round === 1 ? round1[0]! : null,
   );
-  vi.mocked(jolpica.drivers).mockResolvedValue(fixture('2025-drivers').DriverTable!.Drivers.map(toDriver));
-  vi.mocked(jolpica.teams).mockResolvedValue(fixture('2025-constructors').ConstructorTable!.Constructors.map(toTeam));
+  vi.mocked(jolpica.seasonResults).mockImplementation(async (_s, type) =>
+    type === "race" ? round1 : sprint2,
+  );
+  vi.mocked(jolpica.standings).mockImplementation(async (_s, kind) =>
+    toStandings(
+      [
+        fixture(
+          kind === "driver"
+            ? "2025-driverstandings"
+            : "2025-constructorstandings",
+        ),
+      ],
+      kind,
+    ),
+  );
+  vi.mocked(jolpica.drivers).mockResolvedValue(
+    fixture("2025-drivers").DriverTable!.Drivers.map(toDriver),
+  );
+  vi.mocked(jolpica.teams).mockResolvedValue(
+    fixture("2025-constructors").ConstructorTable!.Constructors.map(toTeam),
+  );
 });
 
-describe('season endpoints', () => {
-  it('GET schedule', async () => {
-    const res = await request(app).get('/api/seasons/2025/schedule');
+describe("season endpoints", () => {
+  it("GET schedule", async () => {
+    const res = await request(app).get("/api/seasons/2025/schedule");
     expect(res.status).toBe(200);
     expect(res.body).toHaveLength(24);
-    expect(res.headers['x-data-stale']).toBeUndefined();
+    expect(res.headers["x-data-stale"]).toBeUndefined();
   });
 
-  it('GET results for a raced round', async () => {
-    const res = await request(app).get('/api/seasons/2025/races/1/results');
+  it("GET results for a raced round", async () => {
+    const res = await request(app).get("/api/seasons/2025/races/1/results");
     expect(res.status).toBe(200);
-    expect(res.body.entries[0].driverId).toBe('norris');
+    expect(res.body.entries[0].driverId).toBe("norris");
   });
 
-  it('GET results for a round with no results yet returns empty entries', async () => {
-    const res = await request(app).get('/api/seasons/2025/races/24/results?type=sprint');
+  it("GET results for a round with no results yet returns empty entries", async () => {
+    const res = await request(app).get(
+      "/api/seasons/2025/races/24/results?type=sprint",
+    );
     expect(res.status).toBe(200);
-    expect(res.body).toMatchObject({ season: 2025, round: 24, type: 'sprint', raceName: 'Abu Dhabi Grand Prix', entries: [] });
+    expect(res.body).toMatchObject({
+      season: 2025,
+      round: 24,
+      type: "sprint",
+      raceName: "Abu Dhabi Grand Prix",
+      entries: [],
+    });
   });
 
-  it('GET results for a round not on the schedule is 404', async () => {
-    const res = await request(app).get('/api/seasons/2025/races/25/results');
+  it("GET results for a round not on the schedule is 404", async () => {
+    const res = await request(app).get("/api/seasons/2025/races/25/results");
     expect(res.status).toBe(404);
-    expect(res.body.error.code).toBe('NOT_FOUND');
+    expect(res.body.error.code).toBe("NOT_FOUND");
   });
 
-  it('rejects bad input with 400', async () => {
-    for (const path of ['/api/seasons/abc/schedule', '/api/seasons/2099/schedule', '/api/seasons/2025/races/1/results?type=practice', '/api/seasons/2025/drivers/BAD!']) {
+  it("rejects bad input with 400", async () => {
+    for (const path of [
+      "/api/seasons/abc/schedule",
+      "/api/seasons/2099/schedule",
+      "/api/seasons/2025/races/1/results?type=practice",
+      "/api/seasons/2025/drivers/BAD!",
+    ]) {
       const res = await request(app).get(path);
       expect(res.status, path).toBe(400);
-      expect(res.body.error.code).toBe('VALIDATION');
+      expect(res.body.error.code).toBe("VALIDATION");
     }
   });
 
-  it('GET driver and constructor standings', async () => {
-    const d = await request(app).get('/api/seasons/2025/standings/drivers');
-    expect(d.body.entries[0]).toMatchObject({ id: 'norris', points: 423 });
-    const c = await request(app).get('/api/seasons/2025/standings/constructors');
-    expect(c.body.entries[0]).toMatchObject({ id: 'mclaren', points: 833 });
+  it("GET driver and constructor standings", async () => {
+    const d = await request(app).get("/api/seasons/2025/standings/drivers");
+    expect(d.body.entries[0]).toMatchObject({ id: "norris", points: 423 });
+    const c = await request(app).get(
+      "/api/seasons/2025/standings/constructors",
+    );
+    expect(c.body.entries[0]).toMatchObject({ id: "mclaren", points: 833 });
   });
 
-  it('GET standings before a season starts returns an empty table', async () => {
+  it("GET standings before a season starts returns an empty table", async () => {
     vi.mocked(jolpica.standings).mockResolvedValue(null);
-    const res = await request(app).get('/api/seasons/current/standings/drivers');
+    const res = await request(app).get(
+      "/api/seasons/current/standings/drivers",
+    );
     expect(res.status).toBe(200);
-    expect(res.body).toMatchObject({ afterRound: 0, kind: 'driver', entries: [] });
+    expect(res.body).toMatchObject({
+      afterRound: 0,
+      kind: "driver",
+      entries: [],
+    });
   });
 
-  it('GET driver detail adds race + sprint points', async () => {
-    const res = await request(app).get('/api/seasons/2025/drivers/hamilton');
+  it("GET driver detail adds race + sprint points", async () => {
+    const res = await request(app).get("/api/seasons/2025/drivers/hamilton");
     expect(res.status).toBe(200);
-    const raceRow = round1[0]!.entries.find((e) => e.driverId === 'hamilton')!;
-    const sprintRow = sprint2[0]!.entries.find((e) => e.driverId === 'hamilton')!;
-    expect(res.body.driver.familyName).toBe('Hamilton');
+    const raceRow = round1[0]!.entries.find((e) => e.driverId === "hamilton")!;
+    const sprintRow = sprint2[0]!.entries.find(
+      (e) => e.driverId === "hamilton",
+    )!;
+    expect(res.body.driver.familyName).toBe("Hamilton");
     expect(res.body.results).toHaveLength(1);
     expect(res.body.totalPoints).toBe(raceRow.points + sprintRow.points);
-    expect(res.body.teams.map((t: { teamId: string }) => t.teamId)).toEqual(['ferrari']);
+    expect(res.body.teams.map((t: { teamId: string }) => t.teamId)).toEqual([
+      "ferrari",
+    ]);
   });
 
-  it('GET unknown driver is 404', async () => {
-    const res = await request(app).get('/api/seasons/2025/drivers/nobody');
+  it("GET unknown driver is 404", async () => {
+    const res = await request(app).get("/api/seasons/2025/drivers/nobody");
     expect(res.status).toBe(404);
   });
 
-  it('GET team detail lists its drivers and per-round points', async () => {
-    const res = await request(app).get('/api/seasons/2025/teams/mclaren');
+  it("GET team detail lists its drivers and per-round points", async () => {
+    const res = await request(app).get("/api/seasons/2025/teams/mclaren");
     expect(res.status).toBe(200);
-    expect(res.body.drivers.map((d: { driverId: string }) => d.driverId).sort()).toEqual(['norris', 'piastri']);
+    expect(
+      res.body.drivers.map((d: { driverId: string }) => d.driverId).sort(),
+    ).toEqual(["norris", "piastri"]);
     expect(res.body.results[0]).toMatchObject({ round: 1, bestPosition: 1 });
   });
 
-  it('returns 503 JSON when Jolpica is down and nothing is cached', async () => {
-    vi.mocked(jolpica.schedule).mockRejectedValue(new Error('down'));
-    const res = await request(app).get('/api/seasons/2025/schedule');
+  it("returns 503 JSON when Jolpica is down and nothing is cached", async () => {
+    vi.mocked(jolpica.schedule).mockRejectedValue(new Error("down"));
+    const res = await request(app).get("/api/seasons/2025/schedule");
     expect(res.status).toBe(503);
-    expect(res.body.error.code).toBe('UPSTREAM_UNAVAILABLE');
+    expect(res.body.error.code).toBe("UPSTREAM_UNAVAILABLE");
   });
 });
 ```
@@ -2023,27 +2526,41 @@ Expected: FAIL (404s, since the router doesn't exist).
 - [ ] **Step 3: Implement**
 
 `server/src/controllers/send.ts`:
-```ts
-import type { Response } from 'express';
-import type { CacheResult } from '../services/cache.ts';
 
-export const stale = (...results: CacheResult<unknown>[]): boolean => results.some((r) => r.stale);
+```ts
+import type { Response } from "express";
+import type { CacheResult } from "../services/cache.ts";
+
+export const stale = (...results: CacheResult<unknown>[]): boolean =>
+  results.some((r) => r.stale);
 
 export function send<T>(res: Response, result: CacheResult<T>): void {
-  if (result.stale) res.set('X-Data-Stale', 'true');
+  if (result.stale) res.set("X-Data-Stale", "true");
   res.json(result.data);
 }
 ```
 
 `server/src/controllers/seasons.ts`:
-```ts
-import type { DriverDetail, ResultType, Standings, TeamDetail } from '@f1/shared';
-import type { Request, Response } from 'express';
-import { AppError } from '../errors.ts';
-import { f1data } from '../services/f1data.ts';
-import { send, stale } from './send.ts';
 
-type P = { year: number; round: number; kind: 'drivers' | 'constructors'; driverId: string; teamId: string };
+```ts
+import type {
+  DriverDetail,
+  ResultType,
+  Standings,
+  TeamDetail,
+} from "@f1/shared";
+import type { Request, Response } from "express";
+import { AppError } from "../errors.ts";
+import { f1data } from "../services/f1data.ts";
+import { send, stale } from "./send.ts";
+
+type P = {
+  year: number;
+  round: number;
+  kind: "drivers" | "constructors";
+  driverId: string;
+  teamId: string;
+};
 const params = (res: Response) => res.locals.params as P;
 
 export async function schedule(_req: Request, res: Response) {
@@ -2057,15 +2574,28 @@ export async function results(_req: Request, res: Response) {
   if (r.data) return send(res, r);
   const sched = await f1data.schedule(year);
   const race = sched.data.find((x) => x.round === round);
-  if (!race) throw new AppError(404, 'NOT_FOUND', `There is no round ${round} in ${year}`);
-  send(res, { data: { season: year, round, type, raceName: race.name, entries: [] }, stale: stale(r, sched) });
+  if (!race)
+    throw new AppError(
+      404,
+      "NOT_FOUND",
+      `There is no round ${round} in ${year}`,
+    );
+  send(res, {
+    data: { season: year, round, type, raceName: race.name, entries: [] },
+    stale: stale(r, sched),
+  });
 }
 
 export async function standings(_req: Request, res: Response) {
   const { year, kind } = params(res);
-  const k = kind === 'drivers' ? 'driver' : 'constructor';
+  const k = kind === "drivers" ? "driver" : "constructor";
   const s = await f1data.standings(year, k);
-  const empty: Standings = { season: year, afterRound: 0, kind: k, entries: [] };
+  const empty: Standings = {
+    season: year,
+    afterRound: 0,
+    kind: k,
+    entries: [],
+  };
   send(res, { data: s.data ?? empty, stale: s.stale });
 }
 
@@ -2077,19 +2607,32 @@ export async function driver(_req: Request, res: Response) {
   const { year, driverId } = params(res);
   const [ds, races, sprints, teams] = await Promise.all([
     f1data.drivers(year),
-    f1data.seasonResults(year, 'race'),
-    f1data.seasonResults(year, 'sprint'),
+    f1data.seasonResults(year, "race"),
+    f1data.seasonResults(year, "sprint"),
     f1data.teams(year),
   ]);
   const d = ds.data.find((x) => x.driverId === driverId);
-  if (!d) throw new AppError(404, 'NOT_FOUND', `No driver "${driverId}" in ${year}`);
+  if (!d)
+    throw new AppError(404, "NOT_FOUND", `No driver "${driverId}" in ${year}`);
 
   const rows = races.data.flatMap((r) =>
     r.entries
       .filter((e) => e.driverId === driverId)
-      .map((e) => ({ round: r.round, raceName: r.raceName, position: e.position, positionText: e.positionText, points: e.points, grid: e.grid, status: e.status, teamId: e.teamId })),
+      .map((e) => ({
+        round: r.round,
+        raceName: r.raceName,
+        position: e.position,
+        positionText: e.positionText,
+        points: e.points,
+        grid: e.grid,
+        status: e.status,
+        teamId: e.teamId,
+      })),
   );
-  const sprintPoints = sprints.data.flatMap((r) => r.entries).filter((e) => e.driverId === driverId).reduce((sum, e) => sum + e.points, 0);
+  const sprintPoints = sprints.data
+    .flatMap((r) => r.entries)
+    .filter((e) => e.driverId === driverId)
+    .reduce((sum, e) => sum + e.points, 0);
   const teamIds = new Set(rows.map((r) => r.teamId));
   const detail: DriverDetail = {
     season: year,
@@ -2109,25 +2652,35 @@ export async function team(_req: Request, res: Response) {
   const { year, teamId } = params(res);
   const [ts, races, sprints, ds] = await Promise.all([
     f1data.teams(year),
-    f1data.seasonResults(year, 'race'),
-    f1data.seasonResults(year, 'sprint'),
+    f1data.seasonResults(year, "race"),
+    f1data.seasonResults(year, "sprint"),
     f1data.drivers(year),
   ]);
   const t = ts.data.find((x) => x.teamId === teamId);
-  if (!t) throw new AppError(404, 'NOT_FOUND', `No team "${teamId}" in ${year}`);
+  if (!t)
+    throw new AppError(404, "NOT_FOUND", `No team "${teamId}" in ${year}`);
 
   const sprintByRound = new Map(
-    sprints.data.map((r) => [r.round, r.entries.filter((e) => e.teamId === teamId).reduce((s, e) => s + e.points, 0)]),
+    sprints.data.map((r) => [
+      r.round,
+      r.entries
+        .filter((e) => e.teamId === teamId)
+        .reduce((s, e) => s + e.points, 0),
+    ]),
   );
   const driverIds = new Set<string>();
   const rows = races.data.map((r) => {
     const mine = r.entries.filter((e) => e.teamId === teamId);
     mine.forEach((e) => driverIds.add(e.driverId));
-    const positions = mine.map((e) => e.position).filter((p): p is number => p !== null);
+    const positions = mine
+      .map((e) => e.position)
+      .filter((p): p is number => p !== null);
     return {
       round: r.round,
       raceName: r.raceName,
-      points: mine.reduce((s, e) => s + e.points, 0) + (sprintByRound.get(r.round) ?? 0),
+      points:
+        mine.reduce((s, e) => s + e.points, 0) +
+        (sprintByRound.get(r.round) ?? 0),
       bestPosition: positions.length ? Math.min(...positions) : null,
     };
   });
@@ -2143,41 +2696,60 @@ export async function team(_req: Request, res: Response) {
 ```
 
 `server/src/routes/seasons.ts`:
+
 ```ts
-import { Router } from 'express';
-import { z } from 'zod';
-import * as seasons from '../controllers/seasons.ts';
-import { validate } from '../middleware/validate.ts';
-import { idSchema, yearSchema } from '../schemas.ts';
+import { Router } from "express";
+import { z } from "zod";
+import * as seasons from "../controllers/seasons.ts";
+import { validate } from "../middleware/validate.ts";
+import { idSchema, yearSchema } from "../schemas.ts";
 
 export function seasonsRouter() {
   const r = Router();
   const Year = z.object({ year: yearSchema });
 
-  r.get('/:year/schedule', validate({ params: Year }), seasons.schedule);
+  r.get("/:year/schedule", validate({ params: Year }), seasons.schedule);
   r.get(
-    '/:year/races/:round/results',
+    "/:year/races/:round/results",
     validate({
       params: Year.extend({ round: z.coerce.number().int().min(1).max(40) }),
-      query: z.object({ type: z.enum(['race', 'sprint', 'qualifying']).default('race') }),
+      query: z.object({
+        type: z.enum(["race", "sprint", "qualifying"]).default("race"),
+      }),
     }),
     seasons.results,
   );
-  r.get('/:year/standings/:kind', validate({ params: Year.extend({ kind: z.enum(['drivers', 'constructors']) }) }), seasons.standings);
-  r.get('/:year/drivers', validate({ params: Year }), seasons.drivers);
-  r.get('/:year/drivers/:driverId', validate({ params: Year.extend({ driverId: idSchema }) }), seasons.driver);
-  r.get('/:year/teams', validate({ params: Year }), seasons.teams);
-  r.get('/:year/teams/:teamId', validate({ params: Year.extend({ teamId: idSchema }) }), seasons.team);
+  r.get(
+    "/:year/standings/:kind",
+    validate({
+      params: Year.extend({ kind: z.enum(["drivers", "constructors"]) }),
+    }),
+    seasons.standings,
+  );
+  r.get("/:year/drivers", validate({ params: Year }), seasons.drivers);
+  r.get(
+    "/:year/drivers/:driverId",
+    validate({ params: Year.extend({ driverId: idSchema }) }),
+    seasons.driver,
+  );
+  r.get("/:year/teams", validate({ params: Year }), seasons.teams);
+  r.get(
+    "/:year/teams/:teamId",
+    validate({ params: Year.extend({ teamId: idSchema }) }),
+    seasons.team,
+  );
   return r;
 }
 ```
 
 Modify `server/src/app.ts`: import and mount it after the health route:
+
 ```ts
-import { seasonsRouter } from './routes/seasons.ts';
+import { seasonsRouter } from "./routes/seasons.ts";
 ```
+
 ```ts
-  app.use('/api/seasons', seasonsRouter());
+app.use("/api/seasons", seasonsRouter());
 ```
 
 - [ ] **Step 4: Run tests**
@@ -2188,10 +2760,12 @@ Expected: all PASS.
 - [ ] **Step 5: Manual check against the real API**
 
 With Mongo running and `npm run dev:server`:
+
 ```bash
 curl -s localhost:3000/api/seasons/2025/standings/drivers | head -c 300; echo
 curl -s -o /dev/null -w "%{http_code}\n" localhost:3000/api/seasons/2025/drivers/norris
 ```
+
 Expected: JSON standings with Norris first; `200`.
 
 - [ ] **Step 6: Commit**
@@ -2206,11 +2780,13 @@ git commit -m "feat(server): season schedule, results, standings, driver and tea
 ### Task 7: Accounts — register, login, logout, me, favourites, delete
 
 **Files:**
+
 - Create: `server/src/models/User.ts`, `server/src/middleware/auth.ts`, `server/src/controllers/auth.ts`, `server/src/controllers/users.ts`, `server/src/routes/auth.ts`, `server/src/routes/users.ts`
 - Modify: `server/src/app.ts`
 - Test: `server/test/auth.test.ts`
 
 **Interfaces:**
+
 - Consumes: `config.JWT_SECRET`, `validate`, `idSchema`, `AppError`.
 - Produces:
   - `UserModel`, `toPublicUser(doc): PublicUser`
@@ -2225,102 +2801,156 @@ git commit -m "feat(server): season schedule, results, standings, driver and tea
 - [ ] **Step 1: Write the failing tests**
 
 `server/test/auth.test.ts`:
+
 ```ts
-import request from 'supertest';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { createApp } from '../src/app.ts';
-import { clearDb, startDb, stopDb } from './db.ts';
+import request from "supertest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { createApp } from "../src/app.ts";
+import { clearDb, startDb, stopDb } from "./db.ts";
 
 beforeAll(startDb);
 afterAll(stopDb);
 beforeEach(clearDb);
 
-const fan = { email: 'Fan@Example.com', password: 'lights-out-2026', displayName: 'Fan' };
+const fan = {
+  email: "Fan@Example.com",
+  password: "lights-out-2026",
+  displayName: "Fan",
+};
 
-describe('auth', () => {
-  it('registers, sets an httpOnly cookie and returns the public user', async () => {
-    const res = await request(createApp()).post('/api/auth/register').send(fan);
+describe("auth", () => {
+  it("registers, sets an httpOnly cookie and returns the public user", async () => {
+    const res = await request(createApp()).post("/api/auth/register").send(fan);
     expect(res.status).toBe(201);
-    expect(res.body.user).toMatchObject({ email: 'fan@example.com', displayName: 'Fan', favouriteDriverId: null });
-    expect(res.body.user).not.toHaveProperty('passwordHash');
-    const cookie = String(res.headers['set-cookie']);
+    expect(res.body.user).toMatchObject({
+      email: "fan@example.com",
+      displayName: "Fan",
+      favouriteDriverId: null,
+    });
+    expect(res.body.user).not.toHaveProperty("passwordHash");
+    const cookie = String(res.headers["set-cookie"]);
     expect(cookie).toMatch(/token=/);
     expect(cookie).toMatch(/HttpOnly/i);
     expect(cookie).toMatch(/SameSite=Lax/i);
   });
 
-  it('rejects the same email in a different case with 409', async () => {
+  it("rejects the same email in a different case with 409", async () => {
     const app = createApp();
-    await request(app).post('/api/auth/register').send(fan);
-    const res = await request(app).post('/api/auth/register').send({ ...fan, email: 'fan@example.com' });
+    await request(app).post("/api/auth/register").send(fan);
+    const res = await request(app)
+      .post("/api/auth/register")
+      .send({ ...fan, email: "fan@example.com" });
     expect(res.status).toBe(409);
-    expect(res.body.error.code).toBe('EMAIL_TAKEN');
+    expect(res.body.error.code).toBe("EMAIL_TAKEN");
   });
 
-  it('rejects a short password and a bad email with 400', async () => {
+  it("rejects a short password and a bad email with 400", async () => {
     const app = createApp();
-    expect((await request(app).post('/api/auth/register').send({ ...fan, password: 'short' })).status).toBe(400);
-    expect((await request(app).post('/api/auth/register').send({ ...fan, email: 'not-an-email' })).status).toBe(400);
+    expect(
+      (
+        await request(app)
+          .post("/api/auth/register")
+          .send({ ...fan, password: "short" })
+      ).status,
+    ).toBe(400);
+    expect(
+      (
+        await request(app)
+          .post("/api/auth/register")
+          .send({ ...fan, email: "not-an-email" })
+      ).status,
+    ).toBe(400);
   });
 
-  it('logs in case-insensitively and rejects a wrong password with the same generic error', async () => {
+  it("logs in case-insensitively and rejects a wrong password with the same generic error", async () => {
     const app = createApp();
-    await request(app).post('/api/auth/register').send(fan);
-    const ok = await request(app).post('/api/auth/login').send({ email: 'FAN@example.com', password: fan.password });
+    await request(app).post("/api/auth/register").send(fan);
+    const ok = await request(app)
+      .post("/api/auth/login")
+      .send({ email: "FAN@example.com", password: fan.password });
     expect(ok.status).toBe(200);
-    const bad = await request(app).post('/api/auth/login').send({ email: fan.email, password: 'wrong-password' });
-    const nobody = await request(app).post('/api/auth/login').send({ email: 'nobody@example.com', password: 'wrong-password' });
+    const bad = await request(app)
+      .post("/api/auth/login")
+      .send({ email: fan.email, password: "wrong-password" });
+    const nobody = await request(app)
+      .post("/api/auth/login")
+      .send({ email: "nobody@example.com", password: "wrong-password" });
     expect(bad.status).toBe(401);
     expect(nobody.status).toBe(401);
     expect(bad.body).toEqual(nobody.body);
   });
 
-  it('/me works with the cookie and is 401 without it', async () => {
+  it("/me works with the cookie and is 401 without it", async () => {
     const app = createApp();
     const agent = request.agent(app);
-    await agent.post('/api/auth/register').send(fan);
-    expect((await agent.get('/api/auth/me')).body.user.email).toBe('fan@example.com');
-    const anon = await request(app).get('/api/auth/me');
+    await agent.post("/api/auth/register").send(fan);
+    expect((await agent.get("/api/auth/me")).body.user.email).toBe(
+      "fan@example.com",
+    );
+    const anon = await request(app).get("/api/auth/me");
     expect(anon.status).toBe(401);
-    expect(anon.body.error.code).toBe('UNAUTHENTICATED');
+    expect(anon.body.error.code).toBe("UNAUTHENTICATED");
   });
 
-  it('rejects a tampered cookie', async () => {
-    const res = await request(createApp()).get('/api/auth/me').set('Cookie', 'token=not.a.jwt');
+  it("rejects a tampered cookie", async () => {
+    const res = await request(createApp())
+      .get("/api/auth/me")
+      .set("Cookie", "token=not.a.jwt");
     expect(res.status).toBe(401);
   });
 
-  it('logout clears the cookie', async () => {
+  it("logout clears the cookie", async () => {
     const agent = request.agent(createApp());
-    await agent.post('/api/auth/register').send(fan);
-    expect((await agent.post('/api/auth/logout')).status).toBe(204);
-    expect((await agent.get('/api/auth/me')).status).toBe(401);
+    await agent.post("/api/auth/register").send(fan);
+    expect((await agent.post("/api/auth/logout")).status).toBe(204);
+    expect((await agent.get("/api/auth/me")).status).toBe(401);
   });
 
-  it('updates favourites and display name', async () => {
+  it("updates favourites and display name", async () => {
     const agent = request.agent(createApp());
-    await agent.post('/api/auth/register').send(fan);
-    const res = await agent.patch('/api/users/me').send({ favouriteDriverId: 'leclerc', favouriteTeamId: 'ferrari', displayName: 'Tifosi' });
+    await agent.post("/api/auth/register").send(fan);
+    const res = await agent
+      .patch("/api/users/me")
+      .send({
+        favouriteDriverId: "leclerc",
+        favouriteTeamId: "ferrari",
+        displayName: "Tifosi",
+      });
     expect(res.status).toBe(200);
-    expect(res.body.user).toMatchObject({ favouriteDriverId: 'leclerc', favouriteTeamId: 'ferrari', displayName: 'Tifosi' });
-    const cleared = await agent.patch('/api/users/me').send({ favouriteDriverId: null });
+    expect(res.body.user).toMatchObject({
+      favouriteDriverId: "leclerc",
+      favouriteTeamId: "ferrari",
+      displayName: "Tifosi",
+    });
+    const cleared = await agent
+      .patch("/api/users/me")
+      .send({ favouriteDriverId: null });
     expect(cleared.body.user.favouriteDriverId).toBeNull();
-    expect((await agent.patch('/api/users/me').send({ favouriteDriverId: 'Bad Id!' })).status).toBe(400);
+    expect(
+      (
+        await agent
+          .patch("/api/users/me")
+          .send({ favouriteDriverId: "Bad Id!" })
+      ).status,
+    ).toBe(400);
   });
 
-  it('PATCH and DELETE require login', async () => {
+  it("PATCH and DELETE require login", async () => {
     const app = createApp();
-    expect((await request(app).patch('/api/users/me').send({ displayName: 'x' })).status).toBe(401);
-    expect((await request(app).delete('/api/users/me')).status).toBe(401);
+    expect(
+      (await request(app).patch("/api/users/me").send({ displayName: "x" }))
+        .status,
+    ).toBe(401);
+    expect((await request(app).delete("/api/users/me")).status).toBe(401);
   });
 
-  it('a deleted account\'s still-valid cookie no longer works', async () => {
+  it("a deleted account's still-valid cookie no longer works", async () => {
     const app = createApp();
     const agent = request.agent(app);
-    const reg = await agent.post('/api/auth/register').send(fan);
-    const cookie = reg.headers['set-cookie'] as unknown as string[];
-    expect((await agent.delete('/api/users/me')).status).toBe(204);
-    const res = await request(app).get('/api/auth/me').set('Cookie', cookie);
+    const reg = await agent.post("/api/auth/register").send(fan);
+    const cookie = reg.headers["set-cookie"] as unknown as string[];
+    expect((await agent.delete("/api/users/me")).status).toBe(204);
+    const res = await request(app).get("/api/auth/me").set("Cookie", cookie);
     expect(res.status).toBe(401);
   });
 });
@@ -2334,9 +2964,10 @@ Expected: FAIL (404s).
 - [ ] **Step 3: Implement the model and middleware**
 
 `server/src/models/User.ts`:
+
 ```ts
-import type { PublicUser } from '@f1/shared';
-import { model, Schema, type Types } from 'mongoose';
+import type { PublicUser } from "@f1/shared";
+import { model, Schema, type Types } from "mongoose";
 
 export interface UserDoc {
   _id: Types.ObjectId;
@@ -2349,7 +2980,13 @@ export interface UserDoc {
 
 const UserSchema = new Schema<UserDoc>(
   {
-    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+    },
     passwordHash: { type: String, required: true, select: false },
     displayName: { type: String, required: true, trim: true, maxlength: 40 },
     favouriteDriverId: { type: String, default: null },
@@ -2358,7 +2995,7 @@ const UserSchema = new Schema<UserDoc>(
   { timestamps: true },
 );
 
-export const UserModel = model<UserDoc>('User', UserSchema);
+export const UserModel = model<UserDoc>("User", UserSchema);
 
 export const toPublicUser = (u: UserDoc): PublicUser => ({
   id: u._id.toString(),
@@ -2370,18 +3007,27 @@ export const toPublicUser = (u: UserDoc): PublicUser => ({
 ```
 
 `server/src/middleware/auth.ts`:
-```ts
-import type { RequestHandler, Response } from 'express';
-import jwt from 'jsonwebtoken';
-import { config } from '../config.ts';
-import { AppError } from '../errors.ts';
 
-const COOKIE = 'token';
+```ts
+import type { RequestHandler, Response } from "express";
+import jwt from "jsonwebtoken";
+import { config } from "../config.ts";
+import { AppError } from "../errors.ts";
+
+const COOKIE = "token";
 const WEEK_MS = 7 * 24 * 3600 * 1000;
-const cookieOptions = () => ({ httpOnly: true, secure: config.NODE_ENV === 'production', sameSite: 'lax' as const, path: '/' });
+const cookieOptions = () => ({
+  httpOnly: true,
+  secure: config.NODE_ENV === "production",
+  sameSite: "lax" as const,
+  path: "/",
+});
 
 export function setAuthCookie(res: Response, userId: string) {
-  const token = jwt.sign({ sub: userId }, config.JWT_SECRET, { algorithm: 'HS256', expiresIn: '7d' });
+  const token = jwt.sign({ sub: userId }, config.JWT_SECRET, {
+    algorithm: "HS256",
+    expiresIn: "7d",
+  });
   res.cookie(COOKIE, token, { ...cookieOptions(), maxAge: WEEK_MS });
 }
 
@@ -2389,12 +3035,18 @@ export function clearAuthCookie(res: Response) {
   res.clearCookie(COOKIE, cookieOptions());
 }
 
-function readUserId(cookies: Record<string, unknown> | undefined): string | null {
+function readUserId(
+  cookies: Record<string, unknown> | undefined,
+): string | null {
   const token = cookies?.[COOKIE];
-  if (typeof token !== 'string') return null;
+  if (typeof token !== "string") return null;
   try {
-    const payload = jwt.verify(token, config.JWT_SECRET, { algorithms: ['HS256'] });
-    return typeof payload === 'object' && typeof payload.sub === 'string' ? payload.sub : null;
+    const payload = jwt.verify(token, config.JWT_SECRET, {
+      algorithms: ["HS256"],
+    });
+    return typeof payload === "object" && typeof payload.sub === "string"
+      ? payload.sub
+      : null;
   } catch {
     return null;
   }
@@ -2402,7 +3054,8 @@ function readUserId(cookies: Record<string, unknown> | undefined): string | null
 
 export const requireAuth: RequestHandler = (req, res, next) => {
   const userId = readUserId(req.cookies);
-  if (!userId) return next(new AppError(401, 'UNAUTHENTICATED', 'Please log in'));
+  if (!userId)
+    return next(new AppError(401, "UNAUTHENTICATED", "Please log in"));
   res.locals.userId = userId;
   next();
 };
@@ -2416,34 +3069,57 @@ export const optionalAuth: RequestHandler = (req, res, next) => {
 - [ ] **Step 4: Implement controllers and routes**
 
 `server/src/controllers/auth.ts`:
+
 ```ts
-import bcrypt from 'bcryptjs';
-import type { Request, Response } from 'express';
-import { AppError } from '../errors.ts';
-import { clearAuthCookie, setAuthCookie } from '../middleware/auth.ts';
-import { toPublicUser, UserModel } from '../models/User.ts';
+import bcrypt from "bcryptjs";
+import type { Request, Response } from "express";
+import { AppError } from "../errors.ts";
+import { clearAuthCookie, setAuthCookie } from "../middleware/auth.ts";
+import { toPublicUser, UserModel } from "../models/User.ts";
 
 const ROUNDS = 12;
 // Compared against when the email doesn't exist, so both failure cases take the same time.
-const DUMMY_HASH = bcrypt.hashSync('dummy-password-for-timing', ROUNDS);
-const invalid = () => new AppError(401, 'INVALID_CREDENTIALS', 'Email or password is incorrect');
+const DUMMY_HASH = bcrypt.hashSync("dummy-password-for-timing", ROUNDS);
+const invalid = () =>
+  new AppError(401, "INVALID_CREDENTIALS", "Email or password is incorrect");
 
 export async function register(_req: Request, res: Response) {
-  const { email, password, displayName } = res.locals.body as { email: string; password: string; displayName: string };
-  if (await UserModel.exists({ email })) throw new AppError(409, 'EMAIL_TAKEN', 'An account with this email already exists');
+  const { email, password, displayName } = res.locals.body as {
+    email: string;
+    password: string;
+    displayName: string;
+  };
+  if (await UserModel.exists({ email }))
+    throw new AppError(
+      409,
+      "EMAIL_TAKEN",
+      "An account with this email already exists",
+    );
   try {
-    const user = await UserModel.create({ email, displayName, passwordHash: await bcrypt.hash(password, ROUNDS) });
+    const user = await UserModel.create({
+      email,
+      displayName,
+      passwordHash: await bcrypt.hash(password, ROUNDS),
+    });
     setAuthCookie(res, user._id.toString());
     res.status(201).json({ user: toPublicUser(user) });
   } catch (err) {
-    if ((err as { code?: number }).code === 11000) throw new AppError(409, 'EMAIL_TAKEN', 'An account with this email already exists');
+    if ((err as { code?: number }).code === 11000)
+      throw new AppError(
+        409,
+        "EMAIL_TAKEN",
+        "An account with this email already exists",
+      );
     throw err;
   }
 }
 
 export async function login(_req: Request, res: Response) {
-  const { email, password } = res.locals.body as { email: string; password: string };
-  const user = await UserModel.findOne({ email }).select('+passwordHash');
+  const { email, password } = res.locals.body as {
+    email: string;
+    password: string;
+  };
+  const user = await UserModel.findOne({ email }).select("+passwordHash");
   const ok = await bcrypt.compare(password, user?.passwordHash ?? DUMMY_HASH);
   if (!user || !ok) throw invalid();
   setAuthCookie(res, user._id.toString());
@@ -2459,22 +3135,27 @@ export async function me(_req: Request, res: Response) {
   const user = await UserModel.findById(res.locals.userId);
   if (!user) {
     clearAuthCookie(res);
-    throw new AppError(401, 'UNAUTHENTICATED', 'Please log in');
+    throw new AppError(401, "UNAUTHENTICATED", "Please log in");
   }
   res.json({ user: toPublicUser(user) });
 }
 ```
 
 `server/src/controllers/users.ts`:
+
 ```ts
-import type { Request, Response } from 'express';
-import { AppError } from '../errors.ts';
-import { clearAuthCookie } from '../middleware/auth.ts';
-import { toPublicUser, UserModel } from '../models/User.ts';
+import type { Request, Response } from "express";
+import { AppError } from "../errors.ts";
+import { clearAuthCookie } from "../middleware/auth.ts";
+import { toPublicUser, UserModel } from "../models/User.ts";
 
 export async function updateMe(_req: Request, res: Response) {
-  const user = await UserModel.findByIdAndUpdate(res.locals.userId, { $set: res.locals.body }, { new: true, runValidators: true });
-  if (!user) throw new AppError(401, 'UNAUTHENTICATED', 'Please log in');
+  const user = await UserModel.findByIdAndUpdate(
+    res.locals.userId,
+    { $set: res.locals.body },
+    { new: true, runValidators: true },
+  );
+  if (!user) throw new AppError(401, "UNAUTHENTICATED", "Please log in");
   res.json({ user: toPublicUser(user) });
 }
 
@@ -2486,39 +3167,55 @@ export async function deleteMe(_req: Request, res: Response) {
 ```
 
 `server/src/routes/auth.ts`:
-```ts
-import { Router } from 'express';
-import rateLimit from 'express-rate-limit';
-import { z } from 'zod';
-import * as auth from '../controllers/auth.ts';
-import { requireAuth } from '../middleware/auth.ts';
-import { validate } from '../middleware/validate.ts';
 
-const email = z.string().trim().toLowerCase().pipe(z.email('Enter a valid email'));
-const password = z.string().min(8, 'Password must be at least 8 characters').max(200);
+```ts
+import { Router } from "express";
+import rateLimit from "express-rate-limit";
+import { z } from "zod";
+import * as auth from "../controllers/auth.ts";
+import { requireAuth } from "../middleware/auth.ts";
+import { validate } from "../middleware/validate.ts";
+
+const email = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .pipe(z.email("Enter a valid email"));
+const password = z
+  .string()
+  .min(8, "Password must be at least 8 characters")
+  .max(200);
 const Login = z.object({ email, password });
-const Register = Login.extend({ displayName: z.string().trim().min(1).max(40) });
+const Register = Login.extend({
+  displayName: z.string().trim().min(1).max(40),
+});
 
 export function authRouter() {
   const r = Router();
   // A new limiter per app instance keeps tests isolated.
-  const limiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 20, standardHeaders: 'draft-8', legacyHeaders: false });
-  r.post('/register', limiter, validate({ body: Register }), auth.register);
-  r.post('/login', limiter, validate({ body: Login }), auth.login);
-  r.post('/logout', auth.logout);
-  r.get('/me', requireAuth, auth.me);
+  const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 20,
+    standardHeaders: "draft-8",
+    legacyHeaders: false,
+  });
+  r.post("/register", limiter, validate({ body: Register }), auth.register);
+  r.post("/login", limiter, validate({ body: Login }), auth.login);
+  r.post("/logout", auth.logout);
+  r.get("/me", requireAuth, auth.me);
   return r;
 }
 ```
 
 `server/src/routes/users.ts`:
+
 ```ts
-import { Router } from 'express';
-import { z } from 'zod';
-import * as users from '../controllers/users.ts';
-import { requireAuth } from '../middleware/auth.ts';
-import { validate } from '../middleware/validate.ts';
-import { idSchema } from '../schemas.ts';
+import { Router } from "express";
+import { z } from "zod";
+import * as users from "../controllers/users.ts";
+import { requireAuth } from "../middleware/auth.ts";
+import { validate } from "../middleware/validate.ts";
+import { idSchema } from "../schemas.ts";
 
 const UpdateMe = z
   .object({
@@ -2531,20 +3228,22 @@ const UpdateMe = z
 
 export function usersRouter() {
   const r = Router();
-  r.patch('/me', requireAuth, validate({ body: UpdateMe }), users.updateMe);
-  r.delete('/me', requireAuth, users.deleteMe);
+  r.patch("/me", requireAuth, validate({ body: UpdateMe }), users.updateMe);
+  r.delete("/me", requireAuth, users.deleteMe);
   return r;
 }
 ```
 
 Modify `server/src/app.ts`: import and mount:
+
 ```ts
-import { authRouter } from './routes/auth.ts';
-import { usersRouter } from './routes/users.ts';
+import { authRouter } from "./routes/auth.ts";
+import { usersRouter } from "./routes/users.ts";
 ```
+
 ```ts
-  app.use('/api/auth', authRouter());
-  app.use('/api/users', usersRouter());
+app.use("/api/auth", authRouter());
+app.use("/api/users", usersRouter());
 ```
 
 - [ ] **Step 5: Run tests**
@@ -2564,11 +3263,13 @@ git commit -m "feat(server): JWT cookie auth, favourites and account deletion"
 ### Task 8: Home endpoint
 
 **Files:**
+
 - Create: `server/src/services/home.ts`, `server/src/controllers/home.ts`, `server/src/routes/home.ts`
 - Modify: `server/src/app.ts`
 - Test: `server/test/home.test.ts`
 
 **Interfaces:**
+
 - Consumes: `f1data`, `optionalAuth`, `UserModel`, `send`, `stale`.
 - Produces:
   - `buildHome(input: { season: number; schedule: Race[]; drivers: Standings | null; constructors: Standings | null; now: Date; user: { favouriteDriverId: string | null; favouriteTeamId: string | null } | null }): HomeData`
@@ -2577,28 +3278,52 @@ git commit -m "feat(server): JWT cookie auth, favourites and account deletion"
 - [ ] **Step 1: Write the failing tests**
 
 `server/test/home.test.ts`:
+
 ```ts
-import { readFileSync } from 'node:fs';
-import request from 'supertest';
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { buildHome } from '../src/services/home.ts';
-import { type MRData, toRace, toStandings } from '../src/services/jolpica.transform.ts';
-import { clearDb, startDb, stopDb } from './db.ts';
+import { readFileSync } from "node:fs";
+import request from "supertest";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
+import { buildHome } from "../src/services/home.ts";
+import {
+  type MRData,
+  toRace,
+  toStandings,
+} from "../src/services/jolpica.transform.ts";
+import { clearDb, startDb, stopDb } from "./db.ts";
 
 const fixture = (name: string): MRData =>
-  JSON.parse(readFileSync(new URL(`./fixtures/jolpica/${name}.json`, import.meta.url), 'utf8')).MRData;
-const schedule = fixture('2025-schedule').RaceTable!.Races.map(toRace);
-const drivers = toStandings([fixture('2025-driverstandings')], 'driver');
-const constructors = toStandings([fixture('2025-constructorstandings')], 'constructor');
+  JSON.parse(
+    readFileSync(
+      new URL(`./fixtures/jolpica/${name}.json`, import.meta.url),
+      "utf8",
+    ),
+  ).MRData;
+const schedule = fixture("2025-schedule").RaceTable!.Races.map(toRace);
+const drivers = toStandings([fixture("2025-driverstandings")], "driver");
+const constructors = toStandings(
+  [fixture("2025-constructorstandings")],
+  "constructor",
+);
 
-describe('buildHome', () => {
+describe("buildHome", () => {
   const base = { season: 2025, schedule, drivers, constructors, user: null };
 
-  it('finds the next session and race mid-season', () => {
+  it("finds the next session and race mid-season", () => {
     // Between the Chinese GP sprint (Mar 22 03:00Z) and qualifying (Mar 22 07:00Z)
-    const h = buildHome({ ...base, now: new Date('2025-03-22T05:00:00Z') });
+    const h = buildHome({ ...base, now: new Date("2025-03-22T05:00:00Z") });
     expect(h.nextRace?.round).toBe(2);
-    expect(h.nextSession).toMatchObject({ round: 2, session: { type: 'qualifying' } });
+    expect(h.nextSession).toMatchObject({
+      round: 2,
+      session: { type: "qualifying" },
+    });
     expect(h.completedRounds).toBe(1);
     expect(h.totalRounds).toBe(24);
     expect(h.progressPct).toBeCloseTo(4.2, 1);
@@ -2607,58 +3332,80 @@ describe('buildHome', () => {
     expect(h.fastestPitStop).toBeNull();
   });
 
-  it('handles a finished season', () => {
-    const h = buildHome({ ...base, now: new Date('2025-12-31T00:00:00Z') });
+  it("handles a finished season", () => {
+    const h = buildHome({ ...base, now: new Date("2025-12-31T00:00:00Z") });
     expect(h.nextRace).toBeNull();
     expect(h.nextSession).toBeNull();
     expect(h.progressPct).toBe(100);
   });
 
-  it('handles a season with no standings yet', () => {
-    const h = buildHome({ ...base, drivers: null, constructors: null, now: new Date('2025-01-01T00:00:00Z') });
+  it("handles a season with no standings yet", () => {
+    const h = buildHome({
+      ...base,
+      drivers: null,
+      constructors: null,
+      now: new Date("2025-01-01T00:00:00Z"),
+    });
     expect(h.driverTop10).toEqual([]);
     expect(h.completedRounds).toBe(0);
   });
 
-  it('looks up favourites for a logged-in user', () => {
-    const h = buildHome({ ...base, now: new Date('2025-12-31T00:00:00Z'), user: { favouriteDriverId: 'leclerc', favouriteTeamId: null } });
-    expect(h.favourites?.driver?.id).toBe('leclerc');
+  it("looks up favourites for a logged-in user", () => {
+    const h = buildHome({
+      ...base,
+      now: new Date("2025-12-31T00:00:00Z"),
+      user: { favouriteDriverId: "leclerc", favouriteTeamId: null },
+    });
+    expect(h.favourites?.driver?.id).toBe("leclerc");
     expect(h.favourites?.team).toBeNull();
   });
 });
 
-vi.mock('../src/services/jolpica.ts', () => ({
-  jolpica: { schedule: vi.fn(), results: vi.fn(), seasonResults: vi.fn(), standings: vi.fn(), drivers: vi.fn(), teams: vi.fn() },
+vi.mock("../src/services/jolpica.ts", () => ({
+  jolpica: {
+    schedule: vi.fn(),
+    results: vi.fn(),
+    seasonResults: vi.fn(),
+    standings: vi.fn(),
+    drivers: vi.fn(),
+    teams: vi.fn(),
+  },
 }));
-const { jolpica } = await import('../src/services/jolpica.ts');
-const { createApp } = await import('../src/app.ts');
+const { jolpica } = await import("../src/services/jolpica.ts");
+const { createApp } = await import("../src/app.ts");
 
-describe('GET /api/home', () => {
+describe("GET /api/home", () => {
   beforeAll(startDb);
   afterAll(stopDb);
   beforeEach(async () => {
     await clearDb();
     vi.mocked(jolpica.schedule).mockResolvedValue(schedule);
-    vi.mocked(jolpica.standings).mockImplementation(async (_s, kind) => (kind === 'driver' ? drivers : constructors));
+    vi.mocked(jolpica.standings).mockImplementation(async (_s, kind) =>
+      kind === "driver" ? drivers : constructors,
+    );
   });
 
-  it('works logged out', async () => {
-    const res = await request(createApp()).get('/api/home');
+  it("works logged out", async () => {
+    const res = await request(createApp()).get("/api/home");
     expect(res.status).toBe(200);
     expect(res.body.favourites).toBeNull();
     expect(res.body.driverTop10).toHaveLength(10);
   });
 
-  it('includes favourites when logged in, and falls back to logged-out for a deleted account', async () => {
+  it("includes favourites when logged in, and falls back to logged-out for a deleted account", async () => {
     const app = createApp();
     const agent = request.agent(app);
-    const reg = await agent.post('/api/auth/register').send({ email: 'a@b.co', password: 'password123', displayName: 'A' });
-    await agent.patch('/api/users/me').send({ favouriteDriverId: 'norris' });
-    expect((await agent.get('/api/home')).body.favourites.driver.id).toBe('norris');
+    const reg = await agent
+      .post("/api/auth/register")
+      .send({ email: "a@b.co", password: "password123", displayName: "A" });
+    await agent.patch("/api/users/me").send({ favouriteDriverId: "norris" });
+    expect((await agent.get("/api/home")).body.favourites.driver.id).toBe(
+      "norris",
+    );
 
-    const cookie = reg.headers['set-cookie'] as unknown as string[];
-    await agent.delete('/api/users/me');
-    const res = await request(app).get('/api/home').set('Cookie', cookie);
+    const cookie = reg.headers["set-cookie"] as unknown as string[];
+    await agent.delete("/api/users/me");
+    const res = await request(app).get("/api/home").set("Cookie", cookie);
     expect(res.status).toBe(200);
     expect(res.body.favourites).toBeNull();
   });
@@ -2673,10 +3420,12 @@ Expected: FAIL, cannot find module `../src/services/home.ts`.
 - [ ] **Step 3: Implement**
 
 `server/src/services/home.ts`:
-```ts
-import type { HomeData, NextSession, Race, Standings } from '@f1/shared';
 
-const raceStart = (r: Race): number => Date.parse(r.sessions.find((s) => s.type === 'race')?.startsAt ?? '');
+```ts
+import type { HomeData, NextSession, Race, Standings } from "@f1/shared";
+
+const raceStart = (r: Race): number =>
+  Date.parse(r.sessions.find((s) => s.type === "race")?.startsAt ?? "");
 
 export function buildHome(input: {
   season: number;
@@ -2684,17 +3433,27 @@ export function buildHome(input: {
   drivers: Standings | null;
   constructors: Standings | null;
   now: Date;
-  user: { favouriteDriverId: string | null; favouriteTeamId: string | null } | null;
+  user: {
+    favouriteDriverId: string | null;
+    favouriteTeamId: string | null;
+  } | null;
 }): HomeData {
   const now = input.now.getTime();
   const totalRounds = input.schedule.length;
-  const completedRounds = input.schedule.filter((r) => raceStart(r) <= now).length;
+  const completedRounds = input.schedule.filter(
+    (r) => raceStart(r) <= now,
+  ).length;
 
   let nextSession: NextSession | null = null;
   for (const r of input.schedule) {
     const s = r.sessions.find((x) => Date.parse(x.startsAt) > now);
     if (s) {
-      nextSession = { raceName: r.name, round: r.round, country: r.circuit.country, session: s };
+      nextSession = {
+        raceName: r.name,
+        round: r.round,
+        country: r.circuit.country,
+        session: s,
+      };
       break;
     }
   }
@@ -2705,7 +3464,9 @@ export function buildHome(input: {
     season: input.season,
     totalRounds,
     completedRounds,
-    progressPct: totalRounds ? Math.round((completedRounds / totalRounds) * 1000) / 10 : 0,
+    progressPct: totalRounds
+      ? Math.round((completedRounds / totalRounds) * 1000) / 10
+      : 0,
     nextRace: input.schedule.find((r) => raceStart(r) > now) ?? null,
     nextSession,
     driverTop10: driverEntries.slice(0, 10),
@@ -2713,8 +3474,12 @@ export function buildHome(input: {
     fastestPitStop: null,
     favourites: input.user
       ? {
-          driver: driverEntries.find((e) => e.id === input.user!.favouriteDriverId) ?? null,
-          team: teamEntries.find((e) => e.id === input.user!.favouriteTeamId) ?? null,
+          driver:
+            driverEntries.find((e) => e.id === input.user!.favouriteDriverId) ??
+            null,
+          team:
+            teamEntries.find((e) => e.id === input.user!.favouriteTeamId) ??
+            null,
         }
       : null,
   };
@@ -2722,46 +3487,57 @@ export function buildHome(input: {
 ```
 
 `server/src/controllers/home.ts`:
+
 ```ts
-import type { Request, Response } from 'express';
-import { UserModel } from '../models/User.ts';
-import { f1data } from '../services/f1data.ts';
-import { buildHome } from '../services/home.ts';
-import { send, stale } from './send.ts';
+import type { Request, Response } from "express";
+import { UserModel } from "../models/User.ts";
+import { f1data } from "../services/f1data.ts";
+import { buildHome } from "../services/home.ts";
+import { send, stale } from "./send.ts";
 
 export async function home(_req: Request, res: Response) {
   const season = new Date().getUTCFullYear();
   const [schedule, drivers, constructors] = await Promise.all([
     f1data.schedule(season),
-    f1data.standings(season, 'driver'),
-    f1data.standings(season, 'constructor'),
+    f1data.standings(season, "driver"),
+    f1data.standings(season, "constructor"),
   ]);
   const userId = res.locals.userId as string | null;
   const user = userId ? await UserModel.findById(userId).lean() : null;
-  const data = buildHome({ season, schedule: schedule.data, drivers: drivers.data, constructors: constructors.data, now: new Date(), user });
+  const data = buildHome({
+    season,
+    schedule: schedule.data,
+    drivers: drivers.data,
+    constructors: constructors.data,
+    now: new Date(),
+    user,
+  });
   send(res, { data, stale: stale(schedule, drivers, constructors) });
 }
 ```
 
 `server/src/routes/home.ts`:
+
 ```ts
-import { Router } from 'express';
-import { home } from '../controllers/home.ts';
-import { optionalAuth } from '../middleware/auth.ts';
+import { Router } from "express";
+import { home } from "../controllers/home.ts";
+import { optionalAuth } from "../middleware/auth.ts";
 
 export function homeRouter() {
   const r = Router();
-  r.get('/', optionalAuth, home);
+  r.get("/", optionalAuth, home);
   return r;
 }
 ```
 
 Modify `server/src/app.ts`:
+
 ```ts
-import { homeRouter } from './routes/home.ts';
+import { homeRouter } from "./routes/home.ts";
 ```
+
 ```ts
-  app.use('/api/home', homeRouter());
+app.use("/api/home", homeRouter());
 ```
 
 - [ ] **Step 4: Run tests**
@@ -2781,6 +3557,7 @@ git commit -m "feat(server): home endpoint with next session, progress, top 10 a
 ### Task 9: Client scaffold — Vite, routing, API client, layout
 
 **Files:**
+
 - Create: `client/package.json`, `client/tsconfig.json`, `client/vite.config.ts`, `client/index.html`
 - Create: `client/src/main.tsx`, `client/src/App.tsx`, `client/src/index.css`
 - Create: `client/src/lib/api.ts`, `client/src/lib/useApi.ts`, `client/src/lib/format.ts`, `client/src/lib/useSeason.ts`
@@ -2788,6 +3565,7 @@ git commit -m "feat(server): home endpoint with next session, progress, top 10 a
 - Test: `client/test/api.test.ts`
 
 **Interfaces:**
+
 - Produces:
   - `class ApiError extends Error { status: number; code: string }`
   - `interface ApiResult<T> { data: T; stale: boolean }`
@@ -2800,6 +3578,7 @@ git commit -m "feat(server): home endpoint with next session, progress, top 10 a
 - [ ] **Step 1: Package, config and install**
 
 `client/package.json`:
+
 ```json
 {
   "name": "@f1/client",
@@ -2816,6 +3595,7 @@ git commit -m "feat(server): home endpoint with next session, progress, top 10 a
   }
 }
 ```
+
 All client packages are devDependencies on purpose: they are bundled at build time, so the production image (`npm ci --omit=dev`) doesn't install them.
 
 ```bash
@@ -2823,6 +3603,7 @@ npm install -D -w client react@^19 react-dom@^19 react-router@^7.18 @tanstack/re
 ```
 
 `client/tsconfig.json`:
+
 ```json
 {
   "extends": "../tsconfig.base.json",
@@ -2838,33 +3619,38 @@ npm install -D -w client react@^19 react-dom@^19 react-router@^7.18 @tanstack/re
 ```
 
 `client/vite.config.ts`:
+
 ```ts
 /// <reference types="vitest/config" />
-import tailwindcss from '@tailwindcss/vite';
-import react from '@vitejs/plugin-react';
-import { defineConfig } from 'vite';
+import tailwindcss from "@tailwindcss/vite";
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vite";
 
 // The dev server proxies the API so the browser only ever talks to one origin (no CORS needed).
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     proxy: {
-      '/api': 'http://localhost:3000',
-      '/socket.io': { target: 'http://localhost:3000', ws: true },
+      "/api": "http://localhost:3000",
+      "/socket.io": { target: "http://localhost:3000", ws: true },
     },
   },
-  test: { environment: 'node' },
+  test: { environment: "node" },
 });
 ```
 
 `client/index.html`:
+
 ```html
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Unofficial Formula 1 fan dashboard: schedule, results, standings and race replays." />
+    <meta
+      name="description"
+      content="Unofficial Formula 1 fan dashboard: schedule, results, standings and race replays."
+    />
     <title>F1 Dashboard</title>
   </head>
   <body class="bg-zinc-950 text-zinc-100">
@@ -2875,6 +3661,7 @@ export default defineConfig({
 ```
 
 `client/src/index.css`:
+
 ```css
 @import "tailwindcss";
 
@@ -2886,42 +3673,82 @@ export default defineConfig({
 - [ ] **Step 2: Write the failing API client test**
 
 `client/test/api.test.ts`:
+
 ```ts
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { api, ApiError } from '../src/lib/api';
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { api, ApiError } from "../src/lib/api";
 
 afterEach(() => vi.unstubAllGlobals());
 
-const respond = (status: number, body: unknown, headers: Record<string, string> = {}) =>
-  vi.stubGlobal('fetch', vi.fn(async () => new Response(body === undefined ? null : JSON.stringify(body), { status, headers })));
+const respond = (
+  status: number,
+  body: unknown,
+  headers: Record<string, string> = {},
+) =>
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(
+      async () =>
+        new Response(body === undefined ? null : JSON.stringify(body), {
+          status,
+          headers,
+        }),
+    ),
+  );
 
-describe('api', () => {
-  it('returns data and the stale flag', async () => {
-    respond(200, [1, 2], { 'X-Data-Stale': 'true' });
-    await expect(api.get('/seasons/2025/schedule')).resolves.toEqual({ data: [1, 2], stale: true });
-    expect(fetch).toHaveBeenCalledWith('/api/seasons/2025/schedule', expect.objectContaining({ method: 'GET' }));
+describe("api", () => {
+  it("returns data and the stale flag", async () => {
+    respond(200, [1, 2], { "X-Data-Stale": "true" });
+    await expect(api.get("/seasons/2025/schedule")).resolves.toEqual({
+      data: [1, 2],
+      stale: true,
+    });
+    expect(fetch).toHaveBeenCalledWith(
+      "/api/seasons/2025/schedule",
+      expect.objectContaining({ method: "GET" }),
+    );
   });
 
-  it('throws ApiError with the server code and message', async () => {
-    respond(409, { error: { code: 'EMAIL_TAKEN', message: 'Taken' } });
-    await expect(api.post('/auth/register', {})).rejects.toMatchObject({ status: 409, code: 'EMAIL_TAKEN', message: 'Taken' });
+  it("throws ApiError with the server code and message", async () => {
+    respond(409, { error: { code: "EMAIL_TAKEN", message: "Taken" } });
+    await expect(api.post("/auth/register", {})).rejects.toMatchObject({
+      status: 409,
+      code: "EMAIL_TAKEN",
+      message: "Taken",
+    });
   });
 
-  it('handles a non-JSON error body', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => new Response('<html>Bad gateway</html>', { status: 502 })));
-    await expect(api.get('/home')).rejects.toMatchObject({ status: 502, code: 'HTTP_502' });
+  it("handles a non-JSON error body", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async () => new Response("<html>Bad gateway</html>", { status: 502 }),
+      ),
+    );
+    await expect(api.get("/home")).rejects.toMatchObject({
+      status: 502,
+      code: "HTTP_502",
+    });
   });
 
-  it('turns a network failure into ApiError NETWORK', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => { throw new TypeError('Failed to fetch'); }));
-    const err = await api.get('/home').catch((e) => e);
+  it("turns a network failure into ApiError NETWORK", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        throw new TypeError("Failed to fetch");
+      }),
+    );
+    const err = await api.get("/home").catch((e) => e);
     expect(err).toBeInstanceOf(ApiError);
-    expect(err.code).toBe('NETWORK');
+    expect(err.code).toBe("NETWORK");
   });
 
-  it('handles 204 No Content', async () => {
+  it("handles 204 No Content", async () => {
     respond(204, undefined);
-    await expect(api.del('/users/me')).resolves.toEqual({ data: undefined, stale: false });
+    await expect(api.del("/users/me")).resolves.toEqual({
+      data: undefined,
+      stale: false,
+    });
   });
 });
 ```
@@ -2934,6 +3761,7 @@ Expected: FAIL, cannot find `../src/lib/api`.
 - [ ] **Step 4: Implement the lib files**
 
 `client/src/lib/api.ts`:
+
 ```ts
 export class ApiError extends Error {
   readonly status: number;
@@ -2951,74 +3779,96 @@ export interface ApiResult<T> {
   stale: boolean;
 }
 
-async function request<T>(method: string, path: string, body?: unknown): Promise<ApiResult<T>> {
+async function request<T>(
+  method: string,
+  path: string,
+  body?: unknown,
+): Promise<ApiResult<T>> {
   let res: Response;
   try {
     res = await fetch(`/api${path}`, {
       method,
-      credentials: 'same-origin',
-      headers: body === undefined ? undefined : { 'content-type': 'application/json' },
+      credentials: "same-origin",
+      headers:
+        body === undefined ? undefined : { "content-type": "application/json" },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
   } catch {
-    throw new ApiError(0, 'NETWORK', 'Cannot reach the server. Check your connection and try again.');
+    throw new ApiError(
+      0,
+      "NETWORK",
+      "Cannot reach the server. Check your connection and try again.",
+    );
   }
-  const stale = res.headers.get('x-data-stale') === 'true';
+  const stale = res.headers.get("x-data-stale") === "true";
   if (res.status === 204) return { data: undefined as T, stale };
   const json: unknown = await res.json().catch(() => null);
   if (!res.ok) {
-    const e = (json as { error?: { code?: string; message?: string } } | null)?.error;
-    throw new ApiError(res.status, e?.code ?? `HTTP_${res.status}`, e?.message ?? `Request failed (${res.status})`);
+    const e = (json as { error?: { code?: string; message?: string } } | null)
+      ?.error;
+    throw new ApiError(
+      res.status,
+      e?.code ?? `HTTP_${res.status}`,
+      e?.message ?? `Request failed (${res.status})`,
+    );
   }
   return { data: json as T, stale };
 }
 
 export const api = {
-  get: <T>(path: string) => request<T>('GET', path),
-  post: <T>(path: string, body?: unknown) => request<T>('POST', path, body),
-  patch: <T>(path: string, body: unknown) => request<T>('PATCH', path, body),
-  del: (path: string) => request<undefined>('DELETE', path),
+  get: <T>(path: string) => request<T>("GET", path),
+  post: <T>(path: string, body?: unknown) => request<T>("POST", path, body),
+  patch: <T>(path: string, body: unknown) => request<T>("PATCH", path, body),
+  del: (path: string) => request<undefined>("DELETE", path),
 };
 ```
 
 `client/src/lib/useApi.ts`:
-```ts
-import { useQuery } from '@tanstack/react-query';
-import { api } from './api';
 
-export const useApi = <T>(path: string) => useQuery({ queryKey: [path], queryFn: () => api.get<T>(path) });
+```ts
+import { useQuery } from "@tanstack/react-query";
+import { api } from "./api";
+
+export const useApi = <T>(path: string) =>
+  useQuery({ queryKey: [path], queryFn: () => api.get<T>(path) });
 ```
 
 `client/src/lib/format.ts`:
+
 ```ts
-const dateTime = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' });
-const date = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' });
+const dateTime = new Intl.DateTimeFormat(undefined, {
+  dateStyle: "medium",
+  timeStyle: "short",
+});
+const date = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" });
 
 export const formatDateTime = (iso: string) => dateTime.format(new Date(iso));
 export const formatDate = (iso: string) => date.format(new Date(iso));
 
 export const SESSION_LABEL: Record<string, string> = {
-  fp1: 'Practice 1',
-  fp2: 'Practice 2',
-  fp3: 'Practice 3',
-  sprintQualifying: 'Sprint Qualifying',
-  sprint: 'Sprint',
-  qualifying: 'Qualifying',
-  race: 'Race',
+  fp1: "Practice 1",
+  fp2: "Practice 2",
+  fp3: "Practice 3",
+  sprintQualifying: "Sprint Qualifying",
+  sprint: "Sprint",
+  qualifying: "Qualifying",
+  race: "Race",
 };
 ```
 
 `client/src/lib/useSeason.ts`:
+
 ```ts
-import { useSearchParams } from 'react-router';
+import { useSearchParams } from "react-router";
 
 export const THIS_YEAR = new Date().getUTCFullYear();
 
 export function useSeason(): [number, (s: number) => void] {
   const [params, setParams] = useSearchParams();
-  const raw = Number(params.get('season'));
-  const season = Number.isInteger(raw) && raw >= 1950 && raw <= THIS_YEAR ? raw : THIS_YEAR;
-  return [season, (s) => setParams((p) => (p.set('season', String(s)), p))];
+  const raw = Number(params.get("season"));
+  const season =
+    Number.isInteger(raw) && raw >= 1950 && raw <= THIS_YEAR ? raw : THIS_YEAR;
+  return [season, (s) => setParams((p) => (p.set("season", String(s)), p))];
 }
 ```
 
@@ -3030,12 +3880,19 @@ Expected: 5 PASS.
 - [ ] **Step 6: Components, app shell and entry**
 
 `client/src/components/States.tsx`:
-```tsx
-import type { UseQueryResult } from '@tanstack/react-query';
-import type { ReactNode } from 'react';
-import type { ApiResult } from '../lib/api';
 
-export function PageHeader({ title, children }: { title: string; children?: ReactNode }) {
+```tsx
+import type { UseQueryResult } from "@tanstack/react-query";
+import type { ReactNode } from "react";
+import type { ApiResult } from "../lib/api";
+
+export function PageHeader({
+  title,
+  children,
+}: {
+  title: string;
+  children?: ReactNode;
+}) {
   return (
     <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
       <h1 className="text-2xl font-bold">{title}</h1>
@@ -3046,17 +3903,34 @@ export function PageHeader({ title, children }: { title: string; children?: Reac
 
 export function StaleBadge() {
   return (
-    <p role="status" className="mb-4 inline-block rounded bg-amber-900/60 px-2 py-1 text-xs text-amber-200">
-      Showing saved data — the live source is unavailable, so this may be out of date.
+    <p
+      role="status"
+      className="mb-4 inline-block rounded bg-amber-900/60 px-2 py-1 text-xs text-amber-200"
+    >
+      Showing saved data — the live source is unavailable, so this may be out of
+      date.
     </p>
   );
 }
 
-export function ErrorState({ error, onRetry }: { error: Error; onRetry: () => void }) {
+export function ErrorState({
+  error,
+  onRetry,
+}: {
+  error: Error;
+  onRetry: () => void;
+}) {
   return (
-    <div role="alert" className="rounded-lg border border-red-900 bg-red-950/40 p-4">
+    <div
+      role="alert"
+      className="rounded-lg border border-red-900 bg-red-950/40 p-4"
+    >
       <p className="mb-3">{error.message}</p>
-      <button type="button" onClick={onRetry} className="rounded bg-red-600 px-3 py-1 text-sm font-medium hover:bg-red-500">
+      <button
+        type="button"
+        onClick={onRetry}
+        className="rounded bg-red-600 px-3 py-1 text-sm font-medium hover:bg-red-500"
+      >
         Try again
       </button>
     </div>
@@ -3071,9 +3945,16 @@ export function Loading() {
   );
 }
 
-export function QueryState<T>({ q, children }: { q: UseQueryResult<ApiResult<T>, Error>; children: (data: T, stale: boolean) => ReactNode }) {
+export function QueryState<T>({
+  q,
+  children,
+}: {
+  q: UseQueryResult<ApiResult<T>, Error>;
+  children: (data: T, stale: boolean) => ReactNode;
+}) {
   if (q.isPending) return <Loading />;
-  if (q.isError) return <ErrorState error={q.error} onRetry={() => void q.refetch()} />;
+  if (q.isError)
+    return <ErrorState error={q.error} onRetry={() => void q.refetch()} />;
   return (
     <>
       {q.data.stale && <StaleBadge />}
@@ -3084,12 +3965,22 @@ export function QueryState<T>({ q, children }: { q: UseQueryResult<ApiResult<T>,
 ```
 
 `client/src/components/SeasonSelect.tsx`:
+
 ```tsx
-import { THIS_YEAR } from '../lib/useSeason';
+import { THIS_YEAR } from "../lib/useSeason";
 
-const SEASONS = Array.from({ length: THIS_YEAR - 1949 }, (_, i) => THIS_YEAR - i);
+const SEASONS = Array.from(
+  { length: THIS_YEAR - 1949 },
+  (_, i) => THIS_YEAR - i,
+);
 
-export function SeasonSelect({ value, onChange }: { value: number; onChange: (s: number) => void }) {
+export function SeasonSelect({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (s: number) => void;
+}) {
   return (
     <label className="flex items-center gap-2 text-sm">
       Season
@@ -3110,18 +4001,19 @@ export function SeasonSelect({ value, onChange }: { value: number; onChange: (s:
 ```
 
 `client/src/components/Layout.tsx` (the account link is completed in Task 13):
+
 ```tsx
-import { useIsFetching } from '@tanstack/react-query';
-import { type ReactNode, useEffect, useState } from 'react';
-import { NavLink, Outlet } from 'react-router';
+import { useIsFetching } from "@tanstack/react-query";
+import { type ReactNode, useEffect, useState } from "react";
+import { NavLink, Outlet } from "react-router";
 
 const NAV = [
-  ['/', 'Home'],
-  ['/schedule', 'Schedule'],
-  ['/standings/drivers', 'Drivers’ standings'],
-  ['/standings/constructors', 'Constructors’ standings'],
-  ['/drivers', 'Drivers'],
-  ['/teams', 'Teams'],
+  ["/", "Home"],
+  ["/schedule", "Schedule"],
+  ["/standings/drivers", "Drivers’ standings"],
+  ["/standings/constructors", "Constructors’ standings"],
+  ["/drivers", "Drivers"],
+  ["/teams", "Teams"],
 ] as const;
 
 /** Render's free tier sleeps; the first request can take about a minute. */
@@ -3145,14 +4037,21 @@ export function Layout({ account }: { account?: ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col">
       <header className="border-b border-zinc-800">
-        <nav aria-label="Main" className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-5 gap-y-2 px-4 py-3">
-          <span className="mr-4 font-black tracking-tight text-red-500">F1 DASHBOARD</span>
+        <nav
+          aria-label="Main"
+          className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-5 gap-y-2 px-4 py-3"
+        >
+          <span className="mr-4 font-black tracking-tight text-red-500">
+            F1 DASHBOARD
+          </span>
           {NAV.map(([to, label]) => (
             <NavLink
               key={to}
               to={to}
-              end={to === '/'}
-              className={({ isActive }) => `text-sm ${isActive ? 'text-white underline decoration-red-600 underline-offset-8' : 'text-zinc-400 hover:text-white'}`}
+              end={to === "/"}
+              className={({ isActive }) =>
+                `text-sm ${isActive ? "text-white underline decoration-red-600 underline-offset-8" : "text-zinc-400 hover:text-white"}`
+              }
             >
               {label}
             </NavLink>
@@ -3165,7 +4064,8 @@ export function Layout({ account }: { account?: ReactNode }) {
         <Outlet />
       </main>
       <footer className="border-t border-zinc-800 px-4 py-6 text-center text-xs text-zinc-500">
-        Unofficial fan project. Not associated with Formula 1, the FIA or Formula One Management.
+        Unofficial fan project. Not associated with Formula 1, the FIA or
+        Formula One Management.
       </footer>
     </div>
   );
@@ -3173,8 +4073,9 @@ export function Layout({ account }: { account?: ReactNode }) {
 ```
 
 `client/src/pages/NotFoundPage.tsx`:
+
 ```tsx
-import { Link } from 'react-router';
+import { Link } from "react-router";
 
 export default function NotFoundPage() {
   return (
@@ -3189,13 +4090,14 @@ export default function NotFoundPage() {
 ```
 
 `client/src/App.tsx` (pages are added in Tasks 10–13; start with the 404 page only):
-```tsx
-import { lazy, Suspense } from 'react';
-import { Route, Routes } from 'react-router';
-import { Layout } from './components/Layout';
-import { Loading } from './components/States';
 
-const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
+```tsx
+import { lazy, Suspense } from "react";
+import { Route, Routes } from "react-router";
+import { Layout } from "./components/Layout";
+import { Loading } from "./components/States";
+
+const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 
 export function App() {
   return (
@@ -3211,27 +4113,30 @@ export function App() {
 ```
 
 `client/src/main.tsx`:
+
 ```tsx
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
-import { BrowserRouter } from 'react-router';
-import { App } from './App';
-import { ApiError } from './lib/api';
-import './index.css';
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import { BrowserRouter } from "react-router";
+import { App } from "./App";
+import { ApiError } from "./lib/api";
+import "./index.css";
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       // Retry twice, but never on 4xx: those won't fix themselves.
-      retry: (count, err) => count < 2 && !(err instanceof ApiError && err.status >= 400 && err.status < 500),
+      retry: (count, err) =>
+        count < 2 &&
+        !(err instanceof ApiError && err.status >= 400 && err.status < 500),
       staleTime: 60_000,
       refetchOnWindowFocus: false,
     },
   },
 });
 
-createRoot(document.getElementById('root')!).render(
+createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
@@ -3249,6 +4154,7 @@ npm run typecheck -w client && npm run build -w client
 npm run dev:server   # terminal 1
 npm run dev:client   # terminal 2
 ```
+
 Open `http://localhost:5173/anything`. Expected: header nav, "Page not found", footer disclaimer. `curl -s localhost:5173/api/health` → `{"ok":true}` (proxy works).
 
 - [ ] **Step 8: Commit**
@@ -3263,24 +4169,27 @@ git commit -m "feat(client): Vite React shell with API client, layout and query 
 ### Task 10: Schedule, Results and Standings pages
 
 **Files:**
+
 - Create: `client/src/pages/SchedulePage.tsx`, `client/src/pages/ResultsPage.tsx`, `client/src/pages/StandingsPage.tsx`
 - Modify: `client/src/App.tsx`
 
 **Interfaces:**
+
 - Consumes: `useApi`, `QueryState`, `PageHeader`, `useSeason`, `SeasonSelect`, `formatDate`, `formatDateTime`, `SESSION_LABEL` (Task 9); endpoints from Task 6.
 - Produces: routes `/schedule`, `/results/:season/:round` (`?type=race|sprint|qualifying`), `/standings/drivers`, `/standings/constructors`.
 
 - [ ] **Step 1: Schedule page**
 
 `client/src/pages/SchedulePage.tsx`:
+
 ```tsx
-import type { Race } from '@f1/shared';
-import { Link } from 'react-router';
-import { SeasonSelect } from '../components/SeasonSelect';
-import { PageHeader, QueryState } from '../components/States';
-import { formatDateTime } from '../lib/format';
-import { useApi } from '../lib/useApi';
-import { useSeason } from '../lib/useSeason';
+import type { Race } from "@f1/shared";
+import { Link } from "react-router";
+import { SeasonSelect } from "../components/SeasonSelect";
+import { PageHeader, QueryState } from "../components/States";
+import { formatDateTime } from "../lib/format";
+import { useApi } from "../lib/useApi";
+import { useSeason } from "../lib/useSeason";
 
 export default function SchedulePage() {
   const [season, setSeason] = useSeason();
@@ -3293,21 +4202,26 @@ export default function SchedulePage() {
       <QueryState q={q}>
         {(races) =>
           races.length === 0 ? (
-            <p className="text-zinc-400">No races published for {season} yet.</p>
+            <p className="text-zinc-400">
+              No races published for {season} yet.
+            </p>
           ) : (
             <ol className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {races.map((r) => {
-                const start = r.sessions.find((s) => s.type === 'race')?.startsAt;
+                const start = r.sessions.find(
+                  (s) => s.type === "race",
+                )?.startsAt;
                 const past = start ? Date.parse(start) < Date.now() : false;
                 return (
                   <li key={r.round}>
                     <Link
                       to={`/results/${season}/${r.round}`}
-                      className={`block h-full rounded-lg border p-4 hover:border-red-600 ${past ? 'border-zinc-800 opacity-70' : 'border-zinc-700'}`}
+                      className={`block h-full rounded-lg border p-4 hover:border-red-600 ${past ? "border-zinc-800 opacity-70" : "border-zinc-700"}`}
                     >
                       <p className="text-xs text-zinc-400">
                         Round {r.round}
-                        {r.sessions.some((s) => s.type === 'sprint') && ' · Sprint weekend'}
+                        {r.sessions.some((s) => s.type === "sprint") &&
+                          " · Sprint weekend"}
                       </p>
                       <h2 className="font-semibold">{r.name}</h2>
                       <p className="text-sm text-zinc-400">
@@ -3334,34 +4248,45 @@ export default function SchedulePage() {
 - [ ] **Step 2: Results page**
 
 `client/src/pages/ResultsPage.tsx`:
+
 ```tsx
-import type { RaceResult, ResultType } from '@f1/shared';
-import { Link, useParams, useSearchParams } from 'react-router';
-import { PageHeader, QueryState } from '../components/States';
-import { useApi } from '../lib/useApi';
+import type { RaceResult, ResultType } from "@f1/shared";
+import { Link, useParams, useSearchParams } from "react-router";
+import { PageHeader, QueryState } from "../components/States";
+import { useApi } from "../lib/useApi";
 
 const TYPES: [ResultType, string][] = [
-  ['race', 'Race'],
-  ['sprint', 'Sprint'],
-  ['qualifying', 'Qualifying'],
+  ["race", "Race"],
+  ["sprint", "Sprint"],
+  ["qualifying", "Qualifying"],
 ];
 
 export default function ResultsPage() {
   const { season, round } = useParams();
   const [params, setParams] = useSearchParams();
-  const type = (TYPES.find(([t]) => t === params.get('type'))?.[0] ?? 'race') as ResultType;
-  const q = useApi<RaceResult>(`/seasons/${season}/races/${round}/results?type=${type}`);
+  const type = (TYPES.find(([t]) => t === params.get("type"))?.[0] ??
+    "race") as ResultType;
+  const q = useApi<RaceResult>(
+    `/seasons/${season}/races/${round}/results?type=${type}`,
+  );
 
   return (
     <section>
-      <Link to={`/schedule?season=${season}`} className="text-sm text-zinc-400 hover:text-white">
+      <Link
+        to={`/schedule?season=${season}`}
+        className="text-sm text-zinc-400 hover:text-white"
+      >
         ← {season} schedule
       </Link>
       <QueryState q={q}>
         {(r) => (
           <>
             <PageHeader title={`${r.raceName} ${season}`} />
-            <div role="tablist" aria-label="Session" className="mb-4 flex gap-2">
+            <div
+              role="tablist"
+              aria-label="Session"
+              className="mb-4 flex gap-2"
+            >
               {TYPES.map(([t, label]) => (
                 <button
                   key={t}
@@ -3369,7 +4294,7 @@ export default function ResultsPage() {
                   role="tab"
                   aria-selected={t === type}
                   onClick={() => setParams({ type: t })}
-                  className={`rounded px-3 py-1 text-sm ${t === type ? 'bg-red-600' : 'bg-zinc-800 hover:bg-zinc-700'}`}
+                  className={`rounded px-3 py-1 text-sm ${t === type ? "bg-red-600" : "bg-zinc-800 hover:bg-zinc-700"}`}
                 >
                   {label}
                 </button>
@@ -3388,7 +4313,7 @@ export default function ResultsPage() {
                       <th className="py-2 pr-3">Pos</th>
                       <th className="pr-3">Driver</th>
                       <th className="pr-3">Team</th>
-                      {type === 'qualifying' ? (
+                      {type === "qualifying" ? (
                         <>
                           <th className="pr-3">Q1</th>
                           <th className="pr-3">Q2</th>
@@ -3407,25 +4332,34 @@ export default function ResultsPage() {
                   <tbody>
                     {r.entries.map((e) => (
                       <tr key={e.driverId} className="border-t border-zinc-800">
-                        <td className="py-2 pr-3 font-semibold">{e.positionText}</td>
+                        <td className="py-2 pr-3 font-semibold">
+                          {e.positionText}
+                        </td>
                         <td className="pr-3">
-                          <Link to={`/drivers/${season}/${e.driverId}`} className="hover:underline">
+                          <Link
+                            to={`/drivers/${season}/${e.driverId}`}
+                            className="hover:underline"
+                          >
                             {e.driverName}
                           </Link>
                         </td>
                         <td className="pr-3 text-zinc-400">{e.teamName}</td>
-                        {type === 'qualifying' ? (
+                        {type === "qualifying" ? (
                           <>
-                            <td className="pr-3 tabular-nums">{e.q1 ?? '—'}</td>
-                            <td className="pr-3 tabular-nums">{e.q2 ?? '—'}</td>
-                            <td className="pr-3 tabular-nums">{e.q3 ?? '—'}</td>
+                            <td className="pr-3 tabular-nums">{e.q1 ?? "—"}</td>
+                            <td className="pr-3 tabular-nums">{e.q2 ?? "—"}</td>
+                            <td className="pr-3 tabular-nums">{e.q3 ?? "—"}</td>
                           </>
                         ) : (
                           <>
-                            <td className="pr-3">{e.grid ?? '—'}</td>
-                            <td className="pr-3">{e.laps ?? '—'}</td>
-                            <td className="pr-3 tabular-nums">{e.time ?? e.status ?? '—'}</td>
-                            <td className="pr-3 text-right font-semibold">{e.points}</td>
+                            <td className="pr-3">{e.grid ?? "—"}</td>
+                            <td className="pr-3">{e.laps ?? "—"}</td>
+                            <td className="pr-3 tabular-nums">
+                              {e.time ?? e.status ?? "—"}
+                            </td>
+                            <td className="pr-3 text-right font-semibold">
+                              {e.points}
+                            </td>
                           </>
                         )}
                       </tr>
@@ -3445,18 +4379,24 @@ export default function ResultsPage() {
 - [ ] **Step 3: Standings page**
 
 `client/src/pages/StandingsPage.tsx`:
-```tsx
-import type { Standings } from '@f1/shared';
-import { Link } from 'react-router';
-import { SeasonSelect } from '../components/SeasonSelect';
-import { PageHeader, QueryState } from '../components/States';
-import { useApi } from '../lib/useApi';
-import { useSeason } from '../lib/useSeason';
 
-export default function StandingsPage({ kind }: { kind: 'drivers' | 'constructors' }) {
+```tsx
+import type { Standings } from "@f1/shared";
+import { Link } from "react-router";
+import { SeasonSelect } from "../components/SeasonSelect";
+import { PageHeader, QueryState } from "../components/States";
+import { useApi } from "../lib/useApi";
+import { useSeason } from "../lib/useSeason";
+
+export default function StandingsPage({
+  kind,
+}: {
+  kind: "drivers" | "constructors";
+}) {
   const [season, setSeason] = useSeason();
   const q = useApi<Standings>(`/seasons/${season}/standings/${kind}`);
-  const title = kind === 'drivers' ? 'Drivers’ championship' : 'Constructors’ championship';
+  const title =
+    kind === "drivers" ? "Drivers’ championship" : "Constructors’ championship";
   return (
     <section>
       <PageHeader title={`${season} ${title}`}>
@@ -3468,14 +4408,18 @@ export default function StandingsPage({ kind }: { kind: 'drivers' | 'constructor
             <p className="text-zinc-400">No standings yet for {season}.</p>
           ) : (
             <>
-              <p className="mb-3 text-sm text-zinc-400">After round {s.afterRound}</p>
+              <p className="mb-3 text-sm text-zinc-400">
+                After round {s.afterRound}
+              </p>
               <table className="w-full text-left text-sm">
                 <caption className="sr-only">{title}</caption>
                 <thead className="text-zinc-400">
                   <tr>
                     <th className="py-2 pr-3">Pos</th>
-                    <th className="pr-3">{kind === 'drivers' ? 'Driver' : 'Team'}</th>
-                    {kind === 'drivers' && <th className="pr-3">Team</th>}
+                    <th className="pr-3">
+                      {kind === "drivers" ? "Driver" : "Team"}
+                    </th>
+                    {kind === "drivers" && <th className="pr-3">Team</th>}
                     <th className="pr-3 text-right">Wins</th>
                     <th className="pr-3 text-right">Points</th>
                   </tr>
@@ -3483,15 +4427,26 @@ export default function StandingsPage({ kind }: { kind: 'drivers' | 'constructor
                 <tbody>
                   {s.entries.map((e) => (
                     <tr key={e.id} className="border-t border-zinc-800">
-                      <td className="py-2 pr-3 font-semibold">{e.position ?? '—'}</td>
+                      <td className="py-2 pr-3 font-semibold">
+                        {e.position ?? "—"}
+                      </td>
                       <td className="pr-3">
-                        <Link to={`/${kind === 'drivers' ? 'drivers' : 'teams'}/${season}/${e.id}`} className="hover:underline">
+                        <Link
+                          to={`/${kind === "drivers" ? "drivers" : "teams"}/${season}/${e.id}`}
+                          className="hover:underline"
+                        >
                           {e.name}
                         </Link>
                       </td>
-                      {kind === 'drivers' && <td className="pr-3 text-zinc-400">{e.teamName ?? '—'}</td>}
+                      {kind === "drivers" && (
+                        <td className="pr-3 text-zinc-400">
+                          {e.teamName ?? "—"}
+                        </td>
+                      )}
                       <td className="pr-3 text-right">{e.wins}</td>
-                      <td className="pr-3 text-right font-semibold">{e.points}</td>
+                      <td className="pr-3 text-right font-semibold">
+                        {e.points}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -3508,12 +4463,15 @@ export default function StandingsPage({ kind }: { kind: 'drivers' | 'constructor
 - [ ] **Step 4: Register the routes**
 
 In `client/src/App.tsx`, add the lazy imports next to `NotFoundPage`:
+
 ```tsx
-const SchedulePage = lazy(() => import('./pages/SchedulePage'));
-const ResultsPage = lazy(() => import('./pages/ResultsPage'));
-const StandingsPage = lazy(() => import('./pages/StandingsPage'));
+const SchedulePage = lazy(() => import("./pages/SchedulePage"));
+const ResultsPage = lazy(() => import("./pages/ResultsPage"));
+const StandingsPage = lazy(() => import("./pages/StandingsPage"));
 ```
+
 and inside `<Route element={<Layout />}>`, before the `*` route:
+
 ```tsx
           <Route path="schedule" element={<SchedulePage />} />
           <Route path="results/:season/:round" element={<ResultsPage />} />
@@ -3524,6 +4482,7 @@ and inside `<Route element={<Layout />}>`, before the `*` route:
 - [ ] **Step 5: Verify in the browser**
 
 `npm run typecheck -w client`, then with both dev servers running:
+
 - `/schedule?season=2025` → 24 cards; round 2 says "Sprint weekend".
 - Click round 1 → Australian GP race results, Norris P1. Click **Qualifying** → Q1–Q3 columns. Click **Sprint** → "No results yet for this session."
 - `/standings/drivers?season=2025` → Norris first with 423 points. Change the season dropdown to 2021 → table updates.
@@ -3541,23 +4500,26 @@ git commit -m "feat(client): schedule, results and standings pages"
 ### Task 11: Drivers and Teams pages
 
 **Files:**
+
 - Create: `client/src/pages/DriversPage.tsx`, `client/src/pages/DriverPage.tsx`, `client/src/pages/TeamsPage.tsx`, `client/src/pages/TeamPage.tsx`
 - Modify: `client/src/App.tsx`
 
 **Interfaces:**
+
 - Consumes: Task 9 components/hooks; endpoints `/seasons/:year/drivers[/:id]`, `/seasons/:year/teams[/:id]`.
 - Produces: routes `/drivers`, `/drivers/:season/:driverId`, `/teams`, `/teams/:season/:teamId`.
 
 - [ ] **Step 1: Drivers list and detail**
 
 `client/src/pages/DriversPage.tsx`:
+
 ```tsx
-import type { Driver } from '@f1/shared';
-import { Link } from 'react-router';
-import { SeasonSelect } from '../components/SeasonSelect';
-import { PageHeader, QueryState } from '../components/States';
-import { useApi } from '../lib/useApi';
-import { useSeason } from '../lib/useSeason';
+import type { Driver } from "@f1/shared";
+import { Link } from "react-router";
+import { SeasonSelect } from "../components/SeasonSelect";
+import { PageHeader, QueryState } from "../components/States";
+import { useApi } from "../lib/useApi";
+import { useSeason } from "../lib/useSeason";
 
 export default function DriversPage() {
   const [season, setSeason] = useSeason();
@@ -3572,9 +4534,12 @@ export default function DriversPage() {
           <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {drivers.map((d) => (
               <li key={d.driverId}>
-                <Link to={`/drivers/${season}/${d.driverId}`} className="block rounded-lg border border-zinc-800 p-4 hover:border-red-600">
+                <Link
+                  to={`/drivers/${season}/${d.driverId}`}
+                  className="block rounded-lg border border-zinc-800 p-4 hover:border-red-600"
+                >
                   <p className="text-xs text-zinc-400">
-                    {d.code ?? ''} {d.number !== null && `#${d.number}`}
+                    {d.code ?? ""} {d.number !== null && `#${d.number}`}
                   </p>
                   <p className="font-semibold">
                     {d.givenName} {d.familyName}
@@ -3592,19 +4557,23 @@ export default function DriversPage() {
 ```
 
 `client/src/pages/DriverPage.tsx`:
+
 ```tsx
-import type { DriverDetail } from '@f1/shared';
-import { Link, useParams } from 'react-router';
-import { PageHeader, QueryState } from '../components/States';
-import { formatDate } from '../lib/format';
-import { useApi } from '../lib/useApi';
+import type { DriverDetail } from "@f1/shared";
+import { Link, useParams } from "react-router";
+import { PageHeader, QueryState } from "../components/States";
+import { formatDate } from "../lib/format";
+import { useApi } from "../lib/useApi";
 
 export default function DriverPage() {
   const { season, driverId } = useParams();
   const q = useApi<DriverDetail>(`/seasons/${season}/drivers/${driverId}`);
   return (
     <section>
-      <Link to={`/drivers?season=${season}`} className="text-sm text-zinc-400 hover:text-white">
+      <Link
+        to={`/drivers?season=${season}`}
+        className="text-sm text-zinc-400 hover:text-white"
+      >
         ← {season} drivers
       </Link>
       <QueryState q={q}>
@@ -3613,9 +4582,9 @@ export default function DriverPage() {
             <PageHeader title={`${d.givenName} ${d.familyName}`} />
             <dl className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
               {[
-                ['Team', teams.map((t) => t.name).join(', ') || '—'],
-                ['Nationality', d.nationality],
-                ['Born', d.dateOfBirth ? formatDate(d.dateOfBirth) : '—'],
+                ["Team", teams.map((t) => t.name).join(", ") || "—"],
+                ["Nationality", d.nationality],
+                ["Born", d.dateOfBirth ? formatDate(d.dateOfBirth) : "—"],
                 [`${season} points`, String(totalPoints)],
               ].map(([k, v]) => (
                 <div key={k} className="rounded-lg border border-zinc-800 p-3">
@@ -3644,13 +4613,16 @@ export default function DriverPage() {
                     <tr key={r.round} className="border-t border-zinc-800">
                       <td className="py-2 pr-3">{r.round}</td>
                       <td className="pr-3">
-                        <Link to={`/results/${season}/${r.round}`} className="hover:underline">
+                        <Link
+                          to={`/results/${season}/${r.round}`}
+                          className="hover:underline"
+                        >
                           {r.raceName}
                         </Link>
                       </td>
-                      <td className="pr-3">{r.grid ?? '—'}</td>
+                      <td className="pr-3">{r.grid ?? "—"}</td>
                       <td className="pr-3 font-semibold">{r.positionText}</td>
-                      <td className="pr-3 text-zinc-400">{r.status ?? '—'}</td>
+                      <td className="pr-3 text-zinc-400">{r.status ?? "—"}</td>
                       <td className="pr-3 text-right">{r.points}</td>
                     </tr>
                   ))}
@@ -3668,13 +4640,14 @@ export default function DriverPage() {
 - [ ] **Step 2: Teams list and detail**
 
 `client/src/pages/TeamsPage.tsx`:
+
 ```tsx
-import type { Team } from '@f1/shared';
-import { Link } from 'react-router';
-import { SeasonSelect } from '../components/SeasonSelect';
-import { PageHeader, QueryState } from '../components/States';
-import { useApi } from '../lib/useApi';
-import { useSeason } from '../lib/useSeason';
+import type { Team } from "@f1/shared";
+import { Link } from "react-router";
+import { SeasonSelect } from "../components/SeasonSelect";
+import { PageHeader, QueryState } from "../components/States";
+import { useApi } from "../lib/useApi";
+import { useSeason } from "../lib/useSeason";
 
 export default function TeamsPage() {
   const [season, setSeason] = useSeason();
@@ -3692,7 +4665,7 @@ export default function TeamsPage() {
                 <Link
                   to={`/teams/${season}/${t.teamId}`}
                   className="block rounded-lg border border-l-4 border-zinc-800 p-4 hover:border-red-600"
-                  style={{ borderLeftColor: t.colour ?? '#52525b' }}
+                  style={{ borderLeftColor: t.colour ?? "#52525b" }}
                 >
                   <p className="font-semibold">{t.name}</p>
                   <p className="text-sm text-zinc-400">{t.nationality}</p>
@@ -3708,18 +4681,22 @@ export default function TeamsPage() {
 ```
 
 `client/src/pages/TeamPage.tsx`:
+
 ```tsx
-import type { TeamDetail } from '@f1/shared';
-import { Link, useParams } from 'react-router';
-import { PageHeader, QueryState } from '../components/States';
-import { useApi } from '../lib/useApi';
+import type { TeamDetail } from "@f1/shared";
+import { Link, useParams } from "react-router";
+import { PageHeader, QueryState } from "../components/States";
+import { useApi } from "../lib/useApi";
 
 export default function TeamPage() {
   const { season, teamId } = useParams();
   const q = useApi<TeamDetail>(`/seasons/${season}/teams/${teamId}`);
   return (
     <section>
-      <Link to={`/teams?season=${season}`} className="text-sm text-zinc-400 hover:text-white">
+      <Link
+        to={`/teams?season=${season}`}
+        className="text-sm text-zinc-400 hover:text-white"
+      >
         ← {season} teams
       </Link>
       <QueryState q={q}>
@@ -3733,7 +4710,10 @@ export default function TeamPage() {
             <ul className="mb-6 flex flex-wrap gap-2">
               {drivers.map((d) => (
                 <li key={d.driverId}>
-                  <Link to={`/drivers/${season}/${d.driverId}`} className="block rounded border border-zinc-800 px-3 py-1 hover:border-red-600">
+                  <Link
+                    to={`/drivers/${season}/${d.driverId}`}
+                    className="block rounded border border-zinc-800 px-3 py-1 hover:border-red-600"
+                  >
                     {d.givenName} {d.familyName}
                   </Link>
                 </li>
@@ -3754,7 +4734,7 @@ export default function TeamPage() {
                   <tr key={r.round} className="border-t border-zinc-800">
                     <td className="py-2 pr-3">{r.round}</td>
                     <td className="pr-3">{r.raceName}</td>
-                    <td className="pr-3">{r.bestPosition ?? '—'}</td>
+                    <td className="pr-3">{r.bestPosition ?? "—"}</td>
                     <td className="pr-3 text-right">{r.points}</td>
                   </tr>
                 ))}
@@ -3771,12 +4751,14 @@ export default function TeamPage() {
 - [ ] **Step 3: Register the routes**
 
 In `client/src/App.tsx` add:
+
 ```tsx
-const DriversPage = lazy(() => import('./pages/DriversPage'));
-const DriverPage = lazy(() => import('./pages/DriverPage'));
-const TeamsPage = lazy(() => import('./pages/TeamsPage'));
-const TeamPage = lazy(() => import('./pages/TeamPage'));
+const DriversPage = lazy(() => import("./pages/DriversPage"));
+const DriverPage = lazy(() => import("./pages/DriverPage"));
+const TeamsPage = lazy(() => import("./pages/TeamsPage"));
+const TeamPage = lazy(() => import("./pages/TeamPage"));
 ```
+
 ```tsx
           <Route path="drivers" element={<DriversPage />} />
           <Route path="drivers/:season/:driverId" element={<DriverPage />} />
@@ -3787,6 +4769,7 @@ const TeamPage = lazy(() => import('./pages/TeamPage'));
 - [ ] **Step 4: Verify in the browser**
 
 `npm run typecheck -w client`, then:
+
 - `/drivers?season=2025` → driver cards; click Hamilton → Ferrari, race-by-race table, points total.
 - `/teams?season=2025` → team cards; click McLaren → Norris and Piastri, 24 rounds.
 - `/drivers/2025/nobody` → error box saying no driver "nobody" in 2025.
@@ -3803,30 +4786,45 @@ git commit -m "feat(client): driver and team list and detail pages"
 ### Task 12: Home page with countdown
 
 **Files:**
+
 - Create: `client/src/lib/countdown.ts`, `client/src/components/Countdown.tsx`, `client/src/pages/HomePage.tsx`
 - Modify: `client/src/App.tsx`
 - Test: `client/test/countdown.test.ts`
 
 **Interfaces:**
+
 - Consumes: `GET /api/home` → `HomeData` (Task 8).
 - Produces: `countdownParts(targetIso: string, nowMs: number): { days; hours; minutes; seconds; done: boolean }`; `<Countdown target={iso} />`; route `/`.
 
 - [ ] **Step 1: Write the failing test**
 
 `client/test/countdown.test.ts`:
+
 ```ts
-import { describe, expect, it } from 'vitest';
-import { countdownParts } from '../src/lib/countdown';
+import { describe, expect, it } from "vitest";
+import { countdownParts } from "../src/lib/countdown";
 
-describe('countdownParts', () => {
-  const now = Date.parse('2026-10-15T10:00:00Z');
+describe("countdownParts", () => {
+  const now = Date.parse("2026-10-15T10:00:00Z");
 
-  it('splits the remaining time', () => {
-    expect(countdownParts('2026-10-17T13:04:05Z', now)).toEqual({ days: 2, hours: 3, minutes: 4, seconds: 5, done: false });
+  it("splits the remaining time", () => {
+    expect(countdownParts("2026-10-17T13:04:05Z", now)).toEqual({
+      days: 2,
+      hours: 3,
+      minutes: 4,
+      seconds: 5,
+      done: false,
+    });
   });
 
-  it('reports done once the target has passed', () => {
-    expect(countdownParts('2026-10-15T09:59:59Z', now)).toEqual({ days: 0, hours: 0, minutes: 0, seconds: 0, done: true });
+  it("reports done once the target has passed", () => {
+    expect(countdownParts("2026-10-15T09:59:59Z", now)).toEqual({
+      days: 0,
+      hours: 0,
+      minutes: 0,
+      seconds: 0,
+      done: true,
+    });
   });
 });
 ```
@@ -3839,6 +4837,7 @@ Expected: FAIL, cannot find `../src/lib/countdown`.
 - [ ] **Step 3: Implement**
 
 `client/src/lib/countdown.ts`:
+
 ```ts
 export function countdownParts(targetIso: string, nowMs: number) {
   const diff = Math.max(0, Date.parse(targetIso) - nowMs);
@@ -3854,9 +4853,10 @@ export function countdownParts(targetIso: string, nowMs: number) {
 ```
 
 `client/src/components/Countdown.tsx`:
+
 ```tsx
-import { useEffect, useState } from 'react';
-import { countdownParts } from '../lib/countdown';
+import { useEffect, useState } from "react";
+import { countdownParts } from "../lib/countdown";
 
 export function Countdown({ target }: { target: string }) {
   const [now, setNow] = useState(() => Date.now());
@@ -3865,20 +4865,28 @@ export function Countdown({ target }: { target: string }) {
     return () => clearInterval(t);
   }, []);
   const c = countdownParts(target, now);
-  if (c.done) return <p className="text-lg font-semibold text-red-400">Session under way</p>;
+  if (c.done)
+    return (
+      <p className="text-lg font-semibold text-red-400">Session under way</p>
+    );
   return (
     // The visible digits tick every second; screen readers get one label instead of constant updates.
-    <p className="flex gap-4" aria-label={`${c.days} days ${c.hours} hours ${c.minutes} minutes to go`}>
+    <p
+      className="flex gap-4"
+      aria-label={`${c.days} days ${c.hours} hours ${c.minutes} minutes to go`}
+    >
       {(
         [
-          [c.days, 'days'],
-          [c.hours, 'hrs'],
-          [c.minutes, 'min'],
-          [c.seconds, 'sec'],
+          [c.days, "days"],
+          [c.hours, "hrs"],
+          [c.minutes, "min"],
+          [c.seconds, "sec"],
         ] as const
       ).map(([n, label]) => (
         <span key={label} aria-hidden="true" className="text-center">
-          <span className="block text-3xl font-black tabular-nums">{String(n).padStart(2, '0')}</span>
+          <span className="block text-3xl font-black tabular-nums">
+            {String(n).padStart(2, "0")}
+          </span>
           <span className="text-xs text-zinc-400">{label}</span>
         </span>
       ))}
@@ -3888,15 +4896,24 @@ export function Countdown({ target }: { target: string }) {
 ```
 
 `client/src/pages/HomePage.tsx`:
-```tsx
-import type { HomeData, StandingEntry } from '@f1/shared';
-import { Link } from 'react-router';
-import { Countdown } from '../components/Countdown';
-import { QueryState } from '../components/States';
-import { formatDateTime, SESSION_LABEL } from '../lib/format';
-import { useApi } from '../lib/useApi';
 
-function Top10({ title, rows, to }: { title: string; rows: StandingEntry[]; to: string }) {
+```tsx
+import type { HomeData, StandingEntry } from "@f1/shared";
+import { Link } from "react-router";
+import { Countdown } from "../components/Countdown";
+import { QueryState } from "../components/States";
+import { formatDateTime, SESSION_LABEL } from "../lib/format";
+import { useApi } from "../lib/useApi";
+
+function Top10({
+  title,
+  rows,
+  to,
+}: {
+  title: string;
+  rows: StandingEntry[];
+  to: string;
+}) {
   return (
     <div className="rounded-lg border border-zinc-800 p-4">
       <h2 className="mb-3 font-semibold">{title}</h2>
@@ -3907,7 +4924,9 @@ function Top10({ title, rows, to }: { title: string; rows: StandingEntry[]; to: 
           {rows.map((e) => (
             <li key={e.id} className="flex justify-between gap-2">
               <span>
-                <span className="inline-block w-6 text-zinc-400">{e.position}</span>
+                <span className="inline-block w-6 text-zinc-400">
+                  {e.position}
+                </span>
                 {e.name}
               </span>
               <span className="font-semibold tabular-nums">{e.points}</span>
@@ -3915,35 +4934,54 @@ function Top10({ title, rows, to }: { title: string; rows: StandingEntry[]; to: 
           ))}
         </ol>
       )}
-      <Link to={to} className="mt-3 inline-block text-sm text-red-400 hover:underline">
+      <Link
+        to={to}
+        className="mt-3 inline-block text-sm text-red-400 hover:underline"
+      >
         Full standings →
       </Link>
     </div>
   );
 }
 
-function Favourite({ label, entry }: { label: string; entry: StandingEntry | null }) {
+function Favourite({
+  label,
+  entry,
+}: {
+  label: string;
+  entry: StandingEntry | null;
+}) {
   return (
     <div>
       <p className="text-xs text-zinc-400">{label}</p>
-      <p className="font-semibold">{entry ? `${entry.name}: P${entry.position ?? '—'}, ${entry.points} pts` : 'Not chosen yet'}</p>
+      <p className="font-semibold">
+        {entry
+          ? `${entry.name}: P${entry.position ?? "—"}, ${entry.points} pts`
+          : "Not chosen yet"}
+      </p>
     </div>
   );
 }
 
 export default function HomePage() {
-  const q = useApi<HomeData>('/home');
+  const q = useApi<HomeData>("/home");
   return (
     <QueryState q={q}>
       {(h) => (
         <div className="grid gap-6">
-          <section className="rounded-xl border border-zinc-800 bg-zinc-900 p-6" aria-labelledby="next-session">
+          <section
+            className="rounded-xl border border-zinc-800 bg-zinc-900 p-6"
+            aria-labelledby="next-session"
+          >
             {h.nextSession ? (
               <>
                 <p id="next-session" className="text-sm text-zinc-400">
-                  Round {h.nextSession.round} · {h.nextSession.raceName} · {SESSION_LABEL[h.nextSession.session.type]}
+                  Round {h.nextSession.round} · {h.nextSession.raceName} ·{" "}
+                  {SESSION_LABEL[h.nextSession.session.type]}
                 </p>
-                <p className="mb-4 text-sm">{formatDateTime(h.nextSession.session.startsAt)}</p>
+                <p className="mb-4 text-sm">
+                  {formatDateTime(h.nextSession.session.startsAt)}
+                </p>
                 <Countdown target={h.nextSession.session.startsAt} />
               </>
             ) : (
@@ -3953,20 +4991,37 @@ export default function HomePage() {
             )}
             <div className="mt-6">
               <p className="mb-1 text-xs text-zinc-400">
-                {h.progressPct}% of the {h.season} season completed ({h.completedRounds}/{h.totalRounds} rounds)
+                {h.progressPct}% of the {h.season} season completed (
+                {h.completedRounds}/{h.totalRounds} rounds)
               </p>
-              <div className="h-2 rounded bg-zinc-800" role="progressbar" aria-valuenow={h.progressPct} aria-valuemin={0} aria-valuemax={100} aria-label="Season progress">
-                <div className="h-2 rounded bg-red-600" style={{ width: `${h.progressPct}%` }} />
+              <div
+                className="h-2 rounded bg-zinc-800"
+                role="progressbar"
+                aria-valuenow={h.progressPct}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label="Season progress"
+              >
+                <div
+                  className="h-2 rounded bg-red-600"
+                  style={{ width: `${h.progressPct}%` }}
+                />
               </div>
             </div>
           </section>
 
-          <section className="rounded-lg border border-zinc-800 p-4" aria-label="Your favourites">
+          <section
+            className="rounded-lg border border-zinc-800 p-4"
+            aria-label="Your favourites"
+          >
             {h.favourites ? (
               <div className="flex flex-wrap gap-8">
                 <Favourite label="Your driver" entry={h.favourites.driver} />
                 <Favourite label="Your team" entry={h.favourites.team} />
-                <Link to="/profile" className="self-center text-sm text-red-400 hover:underline">
+                <Link
+                  to="/profile"
+                  className="self-center text-sm text-red-400 hover:underline"
+                >
                   Change
                 </Link>
               </div>
@@ -3974,15 +5029,23 @@ export default function HomePage() {
               <p className="text-sm">
                 <Link to="/login" className="text-red-400 hover:underline">
                   Log in
-                </Link>{' '}
+                </Link>{" "}
                 to follow your favourite driver and team.
               </p>
             )}
           </section>
 
           <div className="grid gap-6 md:grid-cols-2">
-            <Top10 title={`${h.season} drivers`} rows={h.driverTop10} to="/standings/drivers" />
-            <Top10 title={`${h.season} constructors`} rows={h.constructorTop10} to="/standings/constructors" />
+            <Top10
+              title={`${h.season} drivers`}
+              rows={h.driverTop10}
+              to="/standings/drivers"
+            />
+            <Top10
+              title={`${h.season} constructors`}
+              rows={h.constructorTop10}
+              to="/standings/constructors"
+            />
           </div>
         </div>
       )}
@@ -3992,11 +5055,13 @@ export default function HomePage() {
 ```
 
 In `client/src/App.tsx` add:
+
 ```tsx
-const HomePage = lazy(() => import('./pages/HomePage'));
+const HomePage = lazy(() => import("./pages/HomePage"));
 ```
+
 ```tsx
-          <Route index element={<HomePage />} />
+<Route index element={<HomePage />} />
 ```
 
 - [ ] **Step 4: Run tests and verify**
@@ -4016,27 +5081,30 @@ git commit -m "feat(client): home page with countdown, season progress and top 1
 ### Task 13: Login, register and profile pages
 
 **Files:**
+
 - Create: `client/src/lib/useMe.ts`, `client/src/pages/LoginPage.tsx`, `client/src/pages/RegisterPage.tsx`, `client/src/pages/ProfilePage.tsx`
 - Modify: `client/src/App.tsx`, `client/src/components/Layout.tsx` (account slot)
 
 **Interfaces:**
+
 - Consumes: auth/users endpoints (Task 7), `/seasons/current/drivers`, `/seasons/current/teams` (Task 6).
 - Produces: `useMe(): UseQueryResult<PublicUser | null>` (query key `['me']`); `<AccountMenu />`; routes `/login`, `/register`, `/profile`.
 
 - [ ] **Step 1: The current-user hook and account menu**
 
 `client/src/lib/useMe.ts`:
+
 ```ts
-import type { PublicUser } from '@f1/shared';
-import { useQuery } from '@tanstack/react-query';
-import { api, ApiError } from './api';
+import type { PublicUser } from "@f1/shared";
+import { useQuery } from "@tanstack/react-query";
+import { api, ApiError } from "./api";
 
 export const useMe = () =>
   useQuery({
-    queryKey: ['me'],
+    queryKey: ["me"],
     queryFn: async () => {
       try {
-        return (await api.get<{ user: PublicUser }>('/auth/me')).data.user;
+        return (await api.get<{ user: PublicUser }>("/auth/me")).data.user;
       } catch (e) {
         if (e instanceof ApiError && e.status === 401) return null;
         throw e;
@@ -4046,12 +5114,14 @@ export const useMe = () =>
 ```
 
 Add to `client/src/components/Layout.tsx` (new imports at the top, new component below `WakingBanner`):
+
 ```tsx
-import { useQueryClient } from '@tanstack/react-query';
-import { Link, useNavigate } from 'react-router';
-import { api } from '../lib/api';
-import { useMe } from '../lib/useMe';
+import { useQueryClient } from "@tanstack/react-query";
+import { Link, useNavigate } from "react-router";
+import { api } from "../lib/api";
+import { useMe } from "../lib/useMe";
 ```
+
 ```tsx
 export function AccountMenu() {
   const me = useMe();
@@ -4060,7 +5130,10 @@ export function AccountMenu() {
   if (me.isPending) return null;
   if (!me.data)
     return (
-      <Link to="/login" className="rounded bg-red-600 px-3 py-1 text-sm font-medium hover:bg-red-500">
+      <Link
+        to="/login"
+        className="rounded bg-red-600 px-3 py-1 text-sm font-medium hover:bg-red-500"
+      >
         Log in
       </Link>
     );
@@ -4073,10 +5146,10 @@ export function AccountMenu() {
         type="button"
         className="text-zinc-400 hover:text-white"
         onClick={async () => {
-          await api.post('/auth/logout');
-          qc.setQueryData(['me'], null);
-          await qc.invalidateQueries({ queryKey: ['/home'] });
-          navigate('/');
+          await api.post("/auth/logout");
+          qc.setQueryData(["me"], null);
+          await qc.invalidateQueries({ queryKey: ["/home"] });
+          navigate("/");
         }}
       >
         Log out
@@ -4085,6 +5158,7 @@ export function AccountMenu() {
   );
 }
 ```
+
 Merge the `react-router` imports into the existing `import { NavLink, Outlet } from 'react-router';` line.
 
 In `client/src/App.tsx`, change `<Route element={<Layout />}>` to `<Route element={<Layout account={<AccountMenu />} />}>` and import `AccountMenu` from `./components/Layout`.
@@ -4092,26 +5166,29 @@ In `client/src/App.tsx`, change `<Route element={<Layout />}>` to `<Route elemen
 - [ ] **Step 2: Login and register pages**
 
 `client/src/pages/LoginPage.tsx`:
-```tsx
-import type { PublicUser } from '@f1/shared';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { type FormEvent, useState } from 'react';
-import { Link, useNavigate } from 'react-router';
-import { api } from '../lib/api';
 
-export const inputClass = 'w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2';
+```tsx
+import type { PublicUser } from "@f1/shared";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { type FormEvent, useState } from "react";
+import { Link, useNavigate } from "react-router";
+import { api } from "../lib/api";
+
+export const inputClass =
+  "w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2";
 
 export default function LoginPage() {
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const login = useMutation({
-    mutationFn: () => api.post<{ user: PublicUser }>('/auth/login', { email, password }),
+    mutationFn: () =>
+      api.post<{ user: PublicUser }>("/auth/login", { email, password }),
     onSuccess: async ({ data }) => {
-      qc.setQueryData(['me'], data.user);
-      await qc.invalidateQueries({ queryKey: ['/home'] });
-      navigate('/');
+      qc.setQueryData(["me"], data.user);
+      await qc.invalidateQueries({ queryKey: ["/home"] });
+      navigate("/");
     },
   });
   const submit = (e: FormEvent) => {
@@ -4124,21 +5201,43 @@ export default function LoginPage() {
       <form onSubmit={submit} className="grid gap-4">
         <label className="grid gap-1 text-sm">
           Email
-          <input className={inputClass} type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+          <input
+            className={inputClass}
+            type="email"
+            autoComplete="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
         </label>
         <label className="grid gap-1 text-sm">
           Password
-          <input className={inputClass} type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+          <input
+            className={inputClass}
+            type="password"
+            autoComplete="current-password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
         </label>
-        <p role="alert" aria-live="polite" className="min-h-5 text-sm text-red-400">
+        <p
+          role="alert"
+          aria-live="polite"
+          className="min-h-5 text-sm text-red-400"
+        >
           {login.error?.message}
         </p>
-        <button type="submit" disabled={login.isPending} className="rounded bg-red-600 py-2 font-medium hover:bg-red-500 disabled:opacity-50">
-          {login.isPending ? 'Logging in…' : 'Log in'}
+        <button
+          type="submit"
+          disabled={login.isPending}
+          className="rounded bg-red-600 py-2 font-medium hover:bg-red-500 disabled:opacity-50"
+        >
+          {login.isPending ? "Logging in…" : "Log in"}
         </button>
       </form>
       <p className="mt-4 text-sm text-zinc-400">
-        New here?{' '}
+        New here?{" "}
         <Link to="/register" className="text-red-400 hover:underline">
           Create an account
         </Link>
@@ -4149,24 +5248,30 @@ export default function LoginPage() {
 ```
 
 `client/src/pages/RegisterPage.tsx`:
+
 ```tsx
-import type { PublicUser } from '@f1/shared';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { type ChangeEvent, type FormEvent, useState } from 'react';
-import { Link, useNavigate } from 'react-router';
-import { api } from '../lib/api';
-import { inputClass } from './LoginPage';
+import type { PublicUser } from "@f1/shared";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { type ChangeEvent, type FormEvent, useState } from "react";
+import { Link, useNavigate } from "react-router";
+import { api } from "../lib/api";
+import { inputClass } from "./LoginPage";
 
 export default function RegisterPage() {
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ displayName: '', email: '', password: '' });
-  const set = (k: keyof typeof form) => (e: ChangeEvent<HTMLInputElement>) => setForm({ ...form, [k]: e.target.value });
+  const [form, setForm] = useState({
+    displayName: "",
+    email: "",
+    password: "",
+  });
+  const set = (k: keyof typeof form) => (e: ChangeEvent<HTMLInputElement>) =>
+    setForm({ ...form, [k]: e.target.value });
   const register = useMutation({
-    mutationFn: () => api.post<{ user: PublicUser }>('/auth/register', form),
+    mutationFn: () => api.post<{ user: PublicUser }>("/auth/register", form),
     onSuccess: ({ data }) => {
-      qc.setQueryData(['me'], data.user);
-      navigate('/profile');
+      qc.setQueryData(["me"], data.user);
+      navigate("/profile");
     },
   });
   const submit = (e: FormEvent) => {
@@ -4179,25 +5284,55 @@ export default function RegisterPage() {
       <form onSubmit={submit} className="grid gap-4">
         <label className="grid gap-1 text-sm">
           Display name
-          <input className={inputClass} required maxLength={40} autoComplete="nickname" value={form.displayName} onChange={set('displayName')} />
+          <input
+            className={inputClass}
+            required
+            maxLength={40}
+            autoComplete="nickname"
+            value={form.displayName}
+            onChange={set("displayName")}
+          />
         </label>
         <label className="grid gap-1 text-sm">
           Email
-          <input className={inputClass} type="email" required autoComplete="email" value={form.email} onChange={set('email')} />
+          <input
+            className={inputClass}
+            type="email"
+            required
+            autoComplete="email"
+            value={form.email}
+            onChange={set("email")}
+          />
         </label>
         <label className="grid gap-1 text-sm">
           Password (at least 8 characters)
-          <input className={inputClass} type="password" required minLength={8} autoComplete="new-password" value={form.password} onChange={set('password')} />
+          <input
+            className={inputClass}
+            type="password"
+            required
+            minLength={8}
+            autoComplete="new-password"
+            value={form.password}
+            onChange={set("password")}
+          />
         </label>
-        <p role="alert" aria-live="polite" className="min-h-5 text-sm text-red-400">
+        <p
+          role="alert"
+          aria-live="polite"
+          className="min-h-5 text-sm text-red-400"
+        >
           {register.error?.message}
         </p>
-        <button type="submit" disabled={register.isPending} className="rounded bg-red-600 py-2 font-medium hover:bg-red-500 disabled:opacity-50">
-          {register.isPending ? 'Creating…' : 'Create account'}
+        <button
+          type="submit"
+          disabled={register.isPending}
+          className="rounded bg-red-600 py-2 font-medium hover:bg-red-500 disabled:opacity-50"
+        >
+          {register.isPending ? "Creating…" : "Create account"}
         </button>
       </form>
       <p className="mt-4 text-sm text-zinc-400">
-        Already have one?{' '}
+        Already have one?{" "}
         <Link to="/login" className="text-red-400 hover:underline">
           Log in
         </Link>
@@ -4210,42 +5345,46 @@ export default function RegisterPage() {
 - [ ] **Step 3: Profile page (favourites and delete account)**
 
 `client/src/pages/ProfilePage.tsx`:
+
 ```tsx
-import type { Driver, PublicUser, Team } from '@f1/shared';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Navigate, useNavigate } from 'react-router';
-import { Loading } from '../components/States';
-import { api } from '../lib/api';
-import { useApi } from '../lib/useApi';
-import { useMe } from '../lib/useMe';
+import type { Driver, PublicUser, Team } from "@f1/shared";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Navigate, useNavigate } from "react-router";
+import { Loading } from "../components/States";
+import { api } from "../lib/api";
+import { useApi } from "../lib/useApi";
+import { useMe } from "../lib/useMe";
 
 export default function ProfilePage() {
   const me = useMe();
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const drivers = useApi<Driver[]>('/seasons/current/drivers');
-  const teams = useApi<Team[]>('/seasons/current/teams');
+  const drivers = useApi<Driver[]>("/seasons/current/drivers");
+  const teams = useApi<Team[]>("/seasons/current/teams");
 
   const update = useMutation({
-    mutationFn: (patch: Partial<Pick<PublicUser, 'favouriteDriverId' | 'favouriteTeamId'>>) => api.patch<{ user: PublicUser }>('/users/me', patch),
+    mutationFn: (
+      patch: Partial<Pick<PublicUser, "favouriteDriverId" | "favouriteTeamId">>,
+    ) => api.patch<{ user: PublicUser }>("/users/me", patch),
     onSuccess: async ({ data }) => {
-      qc.setQueryData(['me'], data.user);
-      await qc.invalidateQueries({ queryKey: ['/home'] });
+      qc.setQueryData(["me"], data.user);
+      await qc.invalidateQueries({ queryKey: ["/home"] });
     },
   });
   const remove = useMutation({
-    mutationFn: () => api.del('/users/me'),
+    mutationFn: () => api.del("/users/me"),
     onSuccess: async () => {
-      qc.setQueryData(['me'], null);
-      await qc.invalidateQueries({ queryKey: ['/home'] });
-      navigate('/');
+      qc.setQueryData(["me"], null);
+      await qc.invalidateQueries({ queryKey: ["/home"] });
+      navigate("/");
     },
   });
 
   if (me.isPending) return <Loading />;
   if (!me.data) return <Navigate to="/login" replace />;
   const user = me.data;
-  const selectClass = 'w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2';
+  const selectClass =
+    "w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2";
 
   return (
     <section className="mx-auto grid max-w-md gap-6">
@@ -4256,8 +5395,10 @@ export default function ProfilePage() {
         Favourite driver
         <select
           className={selectClass}
-          value={user.favouriteDriverId ?? ''}
-          onChange={(e) => update.mutate({ favouriteDriverId: e.target.value || null })}
+          value={user.favouriteDriverId ?? ""}
+          onChange={(e) =>
+            update.mutate({ favouriteDriverId: e.target.value || null })
+          }
           disabled={!drivers.data}
         >
           <option value="">None</option>
@@ -4273,8 +5414,10 @@ export default function ProfilePage() {
         Favourite team
         <select
           className={selectClass}
-          value={user.favouriteTeamId ?? ''}
-          onChange={(e) => update.mutate({ favouriteTeamId: e.target.value || null })}
+          value={user.favouriteTeamId ?? ""}
+          onChange={(e) =>
+            update.mutate({ favouriteTeamId: e.target.value || null })
+          }
           disabled={!teams.data}
         >
           <option value="">None</option>
@@ -4287,7 +5430,15 @@ export default function ProfilePage() {
       </label>
 
       <p role="status" aria-live="polite" className="min-h-5 text-sm">
-        {update.isPending ? 'Saving…' : update.isError ? <span className="text-red-400">{update.error.message}</span> : update.isSuccess ? 'Saved.' : ''}
+        {update.isPending ? (
+          "Saving…"
+        ) : update.isError ? (
+          <span className="text-red-400">{update.error.message}</span>
+        ) : update.isSuccess ? (
+          "Saved."
+        ) : (
+          ""
+        )}
       </p>
 
       <div className="border-t border-zinc-800 pt-6">
@@ -4295,7 +5446,8 @@ export default function ProfilePage() {
           type="button"
           className="rounded border border-red-800 px-3 py-2 text-sm text-red-400 hover:bg-red-950"
           onClick={() => {
-            if (confirm('Delete your account? This cannot be undone.')) remove.mutate();
+            if (confirm("Delete your account? This cannot be undone."))
+              remove.mutate();
           }}
         >
           Delete my account
@@ -4307,11 +5459,13 @@ export default function ProfilePage() {
 ```
 
 In `client/src/App.tsx` add:
+
 ```tsx
-const LoginPage = lazy(() => import('./pages/LoginPage'));
-const RegisterPage = lazy(() => import('./pages/RegisterPage'));
-const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const LoginPage = lazy(() => import("./pages/LoginPage"));
+const RegisterPage = lazy(() => import("./pages/RegisterPage"));
+const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 ```
+
 ```tsx
           <Route path="login" element={<LoginPage />} />
           <Route path="register" element={<RegisterPage />} />
@@ -4321,6 +5475,7 @@ const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 - [ ] **Step 4: Verify the account flow in the browser**
 
 `npm run typecheck -w client`, then:
+
 1. Register → lands on Profile. Pick a driver and a team → "Saved."
 2. Home → favourites card shows both with positions and points.
 3. Log out → header shows **Log in**; Home shows the log-in prompt.
@@ -4340,49 +5495,55 @@ git commit -m "feat(client): login, register and profile with favourites"
 ### Task 14: Production serving and Docker
 
 **Files:**
+
 - Modify: `server/src/app.ts`
 - Create: `Dockerfile`, `.dockerignore`
 - Modify: `docker-compose.yml`
 - Test: `server/test/static.test.ts`
 
 **Interfaces:**
+
 - Consumes: `createApp({ clientDir })` (Task 1).
 - Produces: when `clientDir` is set, the app serves its files and falls back to `index.html` for any non-`/api` GET; one image that runs the whole app.
 
 - [ ] **Step 1: Write the failing test**
 
 `server/test/static.test.ts`:
-```ts
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import path from 'node:path';
-import request from 'supertest';
-import { describe, expect, it } from 'vitest';
-import { createApp } from '../src/app.ts';
 
-const dir = mkdtempSync(path.join(tmpdir(), 'client-'));
-writeFileSync(path.join(dir, 'index.html'), '<!doctype html><div id="root"></div>');
-mkdirSync(path.join(dir, 'assets'));
-writeFileSync(path.join(dir, 'assets', 'app.js'), 'console.log(1)');
+```ts
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import request from "supertest";
+import { describe, expect, it } from "vitest";
+import { createApp } from "../src/app.ts";
+
+const dir = mkdtempSync(path.join(tmpdir(), "client-"));
+writeFileSync(
+  path.join(dir, "index.html"),
+  '<!doctype html><div id="root"></div>',
+);
+mkdirSync(path.join(dir, "assets"));
+writeFileSync(path.join(dir, "assets", "app.js"), "console.log(1)");
 const app = createApp({ clientDir: dir });
 
-describe('serving the built client', () => {
-  it('serves assets', async () => {
-    const res = await request(app).get('/assets/app.js');
+describe("serving the built client", () => {
+  it("serves assets", async () => {
+    const res = await request(app).get("/assets/app.js");
     expect(res.status).toBe(200);
-    expect(res.text).toBe('console.log(1)');
+    expect(res.text).toBe("console.log(1)");
   });
 
-  it('falls back to index.html for client routes', async () => {
-    const res = await request(app).get('/drivers/2025/norris');
+  it("falls back to index.html for client routes", async () => {
+    const res = await request(app).get("/drivers/2025/norris");
     expect(res.status).toBe(200);
     expect(res.text).toContain('id="root"');
   });
 
-  it('keeps unknown API routes as JSON 404s', async () => {
-    const res = await request(app).get('/api/nope');
+  it("keeps unknown API routes as JSON 404s", async () => {
+    const res = await request(app).get("/api/nope");
     expect(res.status).toBe(404);
-    expect(res.body.error.code).toBe('NOT_FOUND');
+    expect(res.body.error.code).toBe("NOT_FOUND");
   });
 });
 ```
@@ -4395,46 +5556,57 @@ Expected: FAIL (`/assets/app.js` returns 404).
 - [ ] **Step 3: Implement static serving**
 
 In `server/src/app.ts`: rename `_opts` to `opts`, and between `app.use('/api', notFound);` and `app.use(errorHandler);` insert:
+
 ```ts
-  if (opts.clientDir) {
-    const clientDir = opts.clientDir;
-    app.use(express.static(clientDir, { index: false, maxAge: '1h' }));
-    app.get('/{*splat}', (_req, res) => res.sendFile('index.html', { root: clientDir }));
-  }
+if (opts.clientDir) {
+  const clientDir = opts.clientDir;
+  app.use(express.static(clientDir, { index: false, maxAge: "1h" }));
+  app.get("/{*splat}", (_req, res) =>
+    res.sendFile("index.html", { root: clientDir }),
+  );
+}
 ```
+
 The final `server/src/app.ts` reads:
+
 ```ts
-import cookieParser from 'cookie-parser';
-import express from 'express';
-import helmet from 'helmet';
-import { config } from './config.ts';
-import { errorHandler, notFound } from './middleware/errorHandler.ts';
-import { authRouter } from './routes/auth.ts';
-import { homeRouter } from './routes/home.ts';
-import { seasonsRouter } from './routes/seasons.ts';
-import { usersRouter } from './routes/users.ts';
+import cookieParser from "cookie-parser";
+import express from "express";
+import helmet from "helmet";
+import { config } from "./config.ts";
+import { errorHandler, notFound } from "./middleware/errorHandler.ts";
+import { authRouter } from "./routes/auth.ts";
+import { homeRouter } from "./routes/home.ts";
+import { seasonsRouter } from "./routes/seasons.ts";
+import { usersRouter } from "./routes/users.ts";
 
 export function createApp(opts: { clientDir?: string } = {}) {
   const app = express();
-  if (config.NODE_ENV === 'production') app.set('trust proxy', 1); // Render's proxy; needed for rate limiting by IP
+  if (config.NODE_ENV === "production") app.set("trust proxy", 1); // Render's proxy; needed for rate limiting by IP
   // Render serves HTTPS itself; upgrade-insecure-requests would break plain-http local runs (Docker on localhost).
-  app.use(helmet({ contentSecurityPolicy: { directives: { upgradeInsecureRequests: null } } }));
-  app.use(express.json({ limit: '100kb' }));
+  app.use(
+    helmet({
+      contentSecurityPolicy: { directives: { upgradeInsecureRequests: null } },
+    }),
+  );
+  app.use(express.json({ limit: "100kb" }));
   app.use(cookieParser());
 
-  app.get('/api/health', (_req, res) => {
+  app.get("/api/health", (_req, res) => {
     res.json({ ok: true });
   });
-  app.use('/api/seasons', seasonsRouter());
-  app.use('/api/auth', authRouter());
-  app.use('/api/users', usersRouter());
-  app.use('/api/home', homeRouter());
-  app.use('/api', notFound);
+  app.use("/api/seasons", seasonsRouter());
+  app.use("/api/auth", authRouter());
+  app.use("/api/users", usersRouter());
+  app.use("/api/home", homeRouter());
+  app.use("/api", notFound);
 
   if (opts.clientDir) {
     const clientDir = opts.clientDir;
-    app.use(express.static(clientDir, { index: false, maxAge: '1h' }));
-    app.get('/{*splat}', (_req, res) => res.sendFile('index.html', { root: clientDir }));
+    app.use(express.static(clientDir, { index: false, maxAge: "1h" }));
+    app.get("/{*splat}", (_req, res) =>
+      res.sendFile("index.html", { root: clientDir }),
+    );
   }
 
   app.use(errorHandler);
@@ -4450,6 +5622,7 @@ Expected: all PASS.
 - [ ] **Step 5: Dockerfile, .dockerignore and compose**
 
 `Dockerfile`:
+
 ```dockerfile
 # Build the client
 FROM node:26-slim AS build
@@ -4482,6 +5655,7 @@ CMD ["node", "server/src/index.ts"]
 ```
 
 `.dockerignore`:
+
 ```
 node_modules
 **/node_modules
@@ -4493,6 +5667,7 @@ coverage
 ```
 
 `docker-compose.yml` (add the `app` service; keep `mongo` as is):
+
 ```yaml
 services:
   app:
@@ -4520,6 +5695,7 @@ curl -s localhost:3000/api/health
 curl -s localhost:3000/standings/drivers | head -c 200; echo
 docker compose down
 ```
+
 Expected: `{"ok":true}`; the second command prints the HTML of `index.html`. Open `http://localhost:3000` → the full app works from one origin. (If Docker isn't installed locally, skip this step: Render builds the same image in Task 15.)
 
 - [ ] **Step 7: Commit**
@@ -4534,15 +5710,18 @@ git commit -m "feat: serve the built client from Express and add the production 
 ### Task 15: CI, secret scanning and Render deployment
 
 **Files:**
+
 - Create: `.github/workflows/ci.yml`
 - Modify: none in code
 
 **Interfaces:**
+
 - Produces: CI that type-checks, tests and scans for secrets on every push; a live Render URL serving the app.
 
 - [ ] **Step 1: CI workflow**
 
 `.github/workflows/ci.yml`:
+
 ```yaml
 name: CI
 on:
@@ -4575,6 +5754,7 @@ npm run typecheck && npm test
 git status --short   # .env must NOT appear
 git check-ignore .env && echo ".env is ignored"
 ```
+
 Expected: everything passes; `.env is ignored`.
 
 - [ ] **Step 3: Commit and push to a new public GitHub repo**
@@ -4584,6 +5764,7 @@ git add .github
 git commit -m "ci: typecheck, tests and gitleaks secret scan"
 gh repo create f1-dashboard --public --source . --push
 ```
+
 Expected: the **CI** workflow on GitHub turns green. If gitleaks flags something, remove it from history before continuing.
 
 - [ ] **Step 4: Create the production database (manual, Atlas web UI)**
@@ -4608,11 +5789,13 @@ curl -s $URL/api/health
 curl -s -o /dev/null -w "%{http_code}\n" $URL/api/seasons/2025/standings/drivers
 curl -s -o /dev/null -w "%{http_code}\n" $URL/schedule
 ```
+
 Expected: `{"ok":true}`, `200`, `200`. In a browser: register, set favourites, check Home, log out. In DevTools → Application → Cookies, `token` is `HttpOnly`, `Secure`, `SameSite=Lax`.
 
 - [ ] **Step 7: Record the URL**
 
 Add the live URL to the top of a new `README.md` (the full README is written in the wrap-up):
+
 ```markdown
 # F1 Dashboard
 
@@ -4620,6 +5803,7 @@ Unofficial Formula 1 fan dashboard. **Live:** https://<your-service>.onrender.co
 
 Spec: `docs/superpowers/specs/2026-10-10-f1-dashboard-design.md`
 ```
+
 ```bash
 git add README.md
 git commit -m "docs: add live URL"

@@ -9,7 +9,7 @@ import { useApi } from '../lib/useApi';
 
 function Top10({ title, rows, to }: { title: string; rows: StandingEntry[]; to: string }) {
   return (
-    <div className="card border-t-2 border-t-accent">
+    <div className="card relative overflow-hidden before:absolute before:inset-x-0 before:top-0 before:h-0.5 before:bg-accent">
       <h2 className="mb-3 font-semibold">{title}</h2>
       {rows.length === 0 ? (
         <p className="text-sm text-zinc-400">No standings yet.</p>
@@ -48,7 +48,7 @@ export default function HomePage() {
     <div className="grid gap-8">
       <section aria-labelledby="home-title" className="grid gap-4">
         <h1 id="home-title" className="font-stretch-[75%] text-5xl leading-[1.05] font-black tracking-tight sm:text-7xl">
-          Follow every <FlipWords words={['lap', 'overtake', 'pit stop', 'podium']} />
+          Follow every <FlipWords words={['lap', 'overtake', 'pit stop', 'podium']} className="max-sm:block" />
         </h1>
         <p className="max-w-[60ch] text-zinc-400">Countdowns, standings and every race replay for the current season, in one place.</p>
       </section>

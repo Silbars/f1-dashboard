@@ -13,7 +13,7 @@ export function FlipWords({ words, interval = 2600, className = '' }: { words: s
   }, [reduce, words.length, interval]);
 
   return (
-    <span className={`relative inline-block overflow-hidden pb-[0.12em] align-bottom ${className}`}>
+    <span className={`relative inline-flex overflow-hidden pb-[0.12em] ${className}`}>
       <AnimatePresence mode="popLayout" initial={false}>
         <motion.span
           key={words[i]}
