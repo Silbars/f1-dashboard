@@ -5,7 +5,7 @@ import type { ApiResult } from '../lib/api';
 export function PageHeader({ title, children }: { title: string; children?: ReactNode }) {
   return (
     <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-      <h1 className="text-2xl font-bold">{title}</h1>
+      <h1 className="text-3xl font-black tracking-tight">{title}</h1>
       {children}
     </div>
   );
@@ -32,9 +32,12 @@ export function ErrorState({ error, onRetry }: { error: Error; onRetry: () => vo
 
 export function Loading() {
   return (
-    <p role="status" className="animate-pulse text-zinc-400">
-      Loading…
-    </p>
+    <div role="status" className="grid gap-3">
+      <span className="sr-only">Loading…</span>
+      {[0, 1, 2].map((i) => (
+        <div key={i} className="h-16 animate-pulse rounded-xl bg-zinc-900" />
+      ))}
+    </div>
   );
 }
 

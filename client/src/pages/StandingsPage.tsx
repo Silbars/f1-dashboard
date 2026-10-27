@@ -35,7 +35,7 @@ export default function StandingsPage({ kind }: { kind: 'drivers' | 'constructor
                 <tbody>
                   {s.entries.map((e) => (
                     <tr key={e.id} className="border-t border-zinc-800">
-                      <td className="py-2 pr-3 font-semibold">{e.position ?? '—'}</td>
+                      <td className={`py-2 pr-3 font-semibold ${(e.position ?? 99) <= 3 ? 'text-red-400' : ''}`}>{e.position ?? '—'}</td>
                       <td className="pr-3">
                         <Link to={`/${kind === 'drivers' ? 'drivers' : 'teams'}/${season}/${e.id}`} className="hover:underline">
                           {e.name}

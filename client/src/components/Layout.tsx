@@ -75,13 +75,16 @@ export function Layout({ account }: { account?: ReactNode }) {
     <div className="flex min-h-screen flex-col">
       <header className="border-b border-zinc-800">
         <nav aria-label="Main" className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-5 gap-y-2 px-4 py-3">
-          <span className="mr-4 font-black tracking-tight text-red-500">F1 DASHBOARD</span>
+          <span className="mr-4 flex items-center gap-2 font-black tracking-tight">
+            <span className="grid h-7 w-7 place-items-center rounded-md bg-red-600 text-xs text-white">F1</span>
+            DASHBOARD
+          </span>
           {NAV.map(([to, label]) => (
             <NavLink
               key={to}
               to={to}
               end={to === '/'}
-              className={({ isActive }) => `text-sm ${isActive ? 'text-white underline decoration-red-600 underline-offset-8' : 'text-zinc-400 hover:text-white'}`}
+              className={({ isActive }) => `rounded-md px-2.5 py-1.5 text-sm transition-colors ${isActive ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:bg-zinc-900 hover:text-white'}`}
             >
               {label}
             </NavLink>
