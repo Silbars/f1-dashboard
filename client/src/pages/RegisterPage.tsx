@@ -41,13 +41,13 @@ export default function RegisterPage() {
         <p role="alert" aria-live="polite" className="min-h-5 text-sm text-red-400">
           {register.error?.message}
         </p>
-        <button type="submit" disabled={register.isPending} className="rounded bg-red-600 py-2 font-medium hover:bg-red-500 disabled:opacity-50">
+        <button type="submit" disabled={register.isPending} className="rounded bg-accent text-accent-ink py-2 font-medium hover:bg-accent-hi disabled:opacity-50">
           {register.isPending ? 'Creating…' : 'Create account'}
         </button>
       </form>
       <p className="mt-4 text-sm text-zinc-400">
         Already have one?{' '}
-        <Link to="/login" className="text-red-400 hover:underline">
+        <Link to="/login" className="text-accent-text hover:underline">
           Log in
         </Link>
       </p>

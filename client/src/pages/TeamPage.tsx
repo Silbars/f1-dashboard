@@ -25,7 +25,7 @@ export default function TeamPage() {
               <ul className="mb-6 flex flex-wrap gap-2">
                 {drivers.map((d) => (
                   <li key={d.driverId}>
-                    <Link to={`/drivers/${season}/${d.driverId}`} className="block rounded border border-zinc-800 px-3 py-1 hover:border-red-600">
+                    <Link to={`/drivers/${season}/${d.driverId}`} className="block rounded border border-zinc-800 px-3 py-1 hover:border-accent">
                       {d.givenName} {d.familyName}
                     </Link>
                   </li>

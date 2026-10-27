@@ -29,7 +29,7 @@ export default function ReplayPickerPage() {
                   <ul className="space-y-2">
                     {weekend.map((s) => (
                       <li key={s.sessionKey}>
-                        <Link to={`/replay/${s.sessionKey}`} className="block rounded border border-zinc-800 p-3 hover:border-red-600">
+                        <Link to={`/replay/${s.sessionKey}`} className="block rounded border border-zinc-800 p-3 hover:border-accent">
                           <span className="font-medium">{s.sessionType}</span>
                           <span className="block text-sm text-zinc-400">
                             <time dateTime={s.startsAt}>{formatDateTime(s.startsAt)}</time> · {s.totalLaps} laps

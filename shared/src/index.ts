@@ -211,10 +211,33 @@ export interface ReplayDriver {
   colour: string; // '#RRGGBB', '#888888' when missing
 }
 
+/** [driver number, first lap, last lap, compound]; compound is null when OpenF1 did not say. */
+export type ReplayStint = [n: number, lapStart: number, lapEnd: number, compound: string | null];
+
+/** A numbered turn. x and y are in the outline's frame; angle is the direction (degrees, y up) to place its label, clear of the track. */
+export interface ReplayCorner {
+  number: number;
+  x: number;
+  y: number;
+  angle: number;
+}
+
+/** [driver number, ms]: the replay time the car's last lap began. A retired car can only be parked after that. */
+export type ReplayRetirement = [n: number, fromMs: number];
+
+export interface ReplayTrack {
+  corners: ReplayCorner[];
+  pitLane: [number, number][];
+  retired: ReplayRetirement[];
+}
+
 export interface ReplayMeta {
   session: ReplaySessionSummary;
   drivers: ReplayDriver[];
   outline: [number, number][];
+  stints: ReplayStint[];
+  /** null until the server has looked the track details up; a replay:track event follows when it has. */
+  track: ReplayTrack | null;
 }
 
 export type ReplaySample = [n: number, t: number, x: number, y: number];

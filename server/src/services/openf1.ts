@@ -80,6 +80,24 @@ export interface ORaceControl {
   message: string;
 }
 
+export interface OSessionInfo {
+  circuit_key: number;
+  year: number;
+}
+
+export interface OPit {
+  driver_number: number;
+  date: string; // when the car left the pit lane
+  lane_duration: number | null; // seconds from pit entry to pit exit
+}
+
+export interface OSessionResult {
+  driver_number: number;
+  dnf: boolean;
+  dns: boolean;
+  dsq: boolean;
+}
+
 export interface OLocation {
   date: string;
   driver_number: number;

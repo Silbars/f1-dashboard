@@ -32,14 +32,14 @@ export default function SchedulePage() {
                   <li key={r.round}>
                     <Link
                       to={`/results/${season}/${r.round}`}
-                      className={`card block h-full transition-colors hover:border-red-600 ${past ? 'opacity-60' : ''} ${isNext ? 'border-red-600 bg-red-950/30' : ''}`}
+                      className={`card block h-full transition-colors hover:border-accent ${past ? 'opacity-60' : ''} ${isNext ? 'border-accent bg-accent/10' : ''}`}
                     >
                       <div className="flex items-center justify-between gap-2 text-xs text-zinc-400">
                         <span>
                           Round {r.round}
                           {r.sessions.some((s) => s.type === 'sprint') && ' · Sprint weekend'}
                         </span>
-                        <span className={`rounded-full px-2 py-0.5 font-medium ${isNext ? 'bg-red-600 text-white' : 'bg-zinc-800 text-zinc-300'}`}>{status}</span>
+                        <span className={`rounded-full px-2 py-0.5 font-medium ${isNext ? 'bg-accent text-accent-ink' : 'bg-zinc-800 text-zinc-300'}`}>{status}</span>
                       </div>
                       <h2 className="mt-2 text-lg font-semibold">{r.name}</h2>
                       <p className="text-sm text-zinc-400">

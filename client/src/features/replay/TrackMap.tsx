@@ -1,6 +1,7 @@
-import type { ReplayMeta, ReplaySample } from '@f1/shared';
+import type { ReplayMeta, ReplaySample, ReplayTrack } from '@f1/shared';
 import { type MutableRefObject, useEffect, useRef } from 'react';
-import { clockAt, fitToCanvas, positionAt, pruneBefore } from '../../lib/replay';
+import { clockAt, fitToCanvas, parkedAt, positionAt, pruneBefore, retiredHidden } from '../../lib/replay';
+import { drawTrackDetails } from './trackDetails';
 import type { LiveState } from './useReplay';
 
 interface Props {
@@ -8,15 +9,18 @@ interface Props {
   buffer: MutableRefObject<Map<number, ReplaySample[]>>;
   state: LiveState | null;
   selected: number | null;
+  track: ReplayTrack | null;
+  hideRetired: boolean;
 }
 
 const DOT_RADIUS = 6;
 
 /** Draws the outline once per resize; each animation frame draws one dot per car at the replay time. */
-export function TrackMap({ meta, buffer, state, selected }: Props) {
+export function TrackMap({ meta, buffer, state, selected, track, hideRetired }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stateRef = useRef(state);
   const selectedRef = useRef(selected);
+  const hideRef = useRef(hideRetired);
 
   useEffect(() => {
     stateRef.current = state;
@@ -24,6 +28,9 @@ export function TrackMap({ meta, buffer, state, selected }: Props) {
   useEffect(() => {
     selectedRef.current = selected;
   }, [selected]);
+  useEffect(() => {
+    hideRef.current = hideRetired;
+  }, [hideRetired]);
 
   useEffect(() => {
     const canvas = canvasRef.current!;
@@ -36,6 +43,10 @@ export function TrackMap({ meta, buffer, state, selected }: Props) {
     let fit = fitToCanvas(meta.outline, 1, 1);
     let lastPrune = 0;
     let raf = 0;
+    // Retired cars (driver number to the time their last lap began) and which of them are off the map right now.
+    const retiredFrom = new Map(track?.retired ?? []);
+    const wasGone = new Map<number, boolean>();
+    const gone = new Set<number>();
 
     const layout = () => {
       const rect = canvas.getBoundingClientRect();
@@ -60,9 +71,15 @@ export function TrackMap({ meta, buffer, state, selected }: Props) {
       });
       o.closePath();
       o.stroke();
+      drawTrackDetails(o, fit, meta.outline, track);
     };
 
     const frame = (now: number) => {
+      // Before the first layout (or while hidden) the canvases are 0 px square; drawImage would throw.
+      if (outline.width === 0 || outline.height === 0) {
+        raf = requestAnimationFrame(frame);
+        return;
+      }
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(outline, 0, 0);
@@ -71,7 +88,37 @@ export function TrackMap({ meta, buffer, state, selected }: Props) {
       const s = stateRef.current;
       if (s) {
         const t = clockAt(s, performance.now(), duration);
+        gone.clear();
+        if (hideRef.current) {
+          for (const [n, from] of retiredFrom) {
+            const othersHaveData = () => meta.drivers.some((d) => !retiredFrom.has(d.n) && parkedAt(buffer.current.get(d.n) ?? [], t) !== null);
+            const away = retiredHidden(wasGone.get(n) ?? false, t, from, parkedAt(buffer.current.get(n) ?? [], t), othersHaveData);
+            wasGone.set(n, away);
+            if (away) gone.add(n);
+          }
+        }
+        const followed = selectedRef.current;
+        const trail = followed === null || gone.has(followed) ? undefined : buffer.current.get(followed);
+        if (trail && trail.length > 1) {
+          // The buffer holds about 5 s either side of the replay time; draw the part behind it.
+          ctx.beginPath();
+          let started = false;
+          for (const [, st, sx, sy] of trail) {
+            if (st > t) break;
+            const [px, py] = fit(sx, sy);
+            if (started) ctx.lineTo(px, py);
+            else ctx.moveTo(px, py);
+            started = true;
+          }
+          ctx.strokeStyle = meta.drivers.find((d) => d.n === followed)?.colour ?? '#ffffff';
+          ctx.globalAlpha = 0.8;
+          ctx.lineWidth = 3;
+          ctx.lineJoin = 'round';
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+        }
         for (const d of meta.drivers) {
+          if (gone.has(d.n)) continue;
           const p = positionAt(buffer.current.get(d.n) ?? [], t);
           if (!p) continue;
           const [px, py] = fit(p[0], p[1]);
@@ -106,7 +153,7 @@ export function TrackMap({ meta, buffer, state, selected }: Props) {
       cancelAnimationFrame(raf);
       ro.disconnect();
     };
-  }, [meta, buffer]);
+  }, [meta, buffer, track]);
 
-  return <canvas ref={canvasRef} role="img" aria-label="Track map: positions of all cars" className="block h-full w-full" />;
+  return <canvas ref={canvasRef} role="img" aria-label="Track map: positions of all cars, with turn numbers, pit lane, start line and direction of travel" className="block h-full w-full" />;
 }
