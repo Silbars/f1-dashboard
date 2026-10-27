@@ -7,6 +7,7 @@ const HomePage = lazy(() => import('./pages/HomePage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const SchedulePage = lazy(() => import('./pages/SchedulePage'));
 const ResultsPage = lazy(() => import('./pages/ResultsPage'));
+const SeasonResultsPage = lazy(() => import('./pages/SeasonResultsPage'));
 const StandingsPage = lazy(() => import('./pages/StandingsPage'));
 const DriversPage = lazy(() => import('./pages/DriversPage'));
 const DriverPage = lazy(() => import('./pages/DriverPage'));
@@ -26,6 +27,7 @@ export function App() {
         <Route index element={<HomePage />} />
         <Route element={<RequireAuth />}>
           <Route path="schedule" element={<SchedulePage />} />
+          <Route path="results" element={<SeasonResultsPage />} />
           <Route path="results/:season/:round" element={<ResultsPage />} />
           <Route path="standings/drivers" element={<StandingsPage kind="drivers" />} />
           <Route path="standings/constructors" element={<StandingsPage kind="constructors" />} />

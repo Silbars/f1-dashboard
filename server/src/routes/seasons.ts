@@ -9,6 +9,7 @@ export function seasonsRouter() {
   const Year = z.object({ year: yearSchema });
 
   r.get('/:year/schedule', validate({ params: Year }), seasons.schedule);
+  r.get('/:year/overview', validate({ params: Year }), seasons.overview);
   r.get(
     '/:year/races/:round/results',
     validate({

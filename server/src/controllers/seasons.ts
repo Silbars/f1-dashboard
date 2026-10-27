@@ -3,6 +3,7 @@ import type { Request, Response } from 'express';
 import { AppError } from '../errors.ts';
 import { withOutlines } from '../services/circuitOutlines.ts';
 import { f1data } from '../services/f1data.ts';
+import { buildOverview } from '../services/resultsOverview.ts';
 import { send, stale } from './send.ts';
 
 type P = { year: number; round: number; kind: 'drivers' | 'constructors'; driverId: string; teamId: string };
@@ -22,6 +23,19 @@ export async function results(_req: Request, res: Response) {
   const race = sched.data.find((x) => x.round === round);
   if (!race) throw new AppError(404, 'NOT_FOUND', `There is no round ${round} in ${year}`);
   send(res, { data: { season: year, round, type, raceName: race.name, entries: [] }, stale: stale(r, sched) });
+}
+
+export async function overview(_req: Request, res: Response) {
+  const { year } = params(res);
+  const [sched, races, sprints, quali, ts] = await Promise.all([
+    f1data.schedule(year),
+    f1data.seasonResults(year, 'race'),
+    f1data.seasonResults(year, 'sprint'),
+    f1data.seasonResults(year, 'qualifying'),
+    f1data.teams(year),
+  ]);
+  const data = buildOverview(year, sched.data, races.data, sprints.data, quali.data, ts.data);
+  send(res, { data, stale: stale(sched, races, sprints, quali, ts) });
 }
 
 export async function standings(_req: Request, res: Response) {
