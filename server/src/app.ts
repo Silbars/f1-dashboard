@@ -14,7 +14,19 @@ export function createApp(opts: { clientDir?: string } = {}) {
   const app = express();
   if (config.NODE_ENV === 'production') app.set('trust proxy', 1); // Render's proxy; needed for rate limiting by IP
   // Render serves HTTPS itself; upgrade-insecure-requests would break plain-http local runs (Docker on localhost).
-  app.use(helmet({ contentSecurityPolicy: { directives: { upgradeInsecureRequests: null } } }));
+  // Mapbox GL (schedule map) fetches its style, tiles and glyphs from Mapbox, runs a blob worker and turns images into blobs.
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          upgradeInsecureRequests: null,
+          connectSrc: ["'self'", 'https://api.mapbox.com', 'https://events.mapbox.com'],
+          workerSrc: ["'self'", 'blob:'],
+          imgSrc: ["'self'", 'data:', 'blob:'],
+        },
+      },
+    }),
+  );
   app.use(express.json({ limit: '100kb' }));
   app.use(cookieParser());
 

@@ -9,3 +9,12 @@ describe('GET /api/health', () => {
     expect(res.body).toEqual({ ok: true });
   });
 });
+
+describe('Content-Security-Policy', () => {
+  it('lets the schedule map load Mapbox tiles and run its worker', async () => {
+    const csp = (await request(createApp()).get('/api/health')).headers['content-security-policy'] as string;
+    expect(csp).toContain("connect-src 'self' https://api.mapbox.com https://events.mapbox.com");
+    expect(csp).toContain("worker-src 'self' blob:");
+    expect(csp).toContain("img-src 'self' data: blob:");
+  });
+});

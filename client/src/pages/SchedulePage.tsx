@@ -1,4 +1,5 @@
 import type { Race } from '@f1/shared';
+import { lazy, Suspense } from 'react';
 import { Link } from 'react-router';
 import { SeasonSelect } from '../components/SeasonSelect';
 import { PageHeader, QueryState } from '../components/States';
@@ -7,6 +8,10 @@ import { useApi } from '../lib/useApi';
 import { useSeason } from '../lib/useSeason';
 
 const raceStart = (r: Race) => r.sessions.find((s) => s.type === 'race')?.startsAt;
+
+// Mapbox GL is large, so it loads only on this page, and only when a public token is configured (VITE_MAPBOX_TOKEN in the root .env).
+const ScheduleMap = lazy(() => import('../components/ScheduleMap'));
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN as string | undefined;
 
 // Circuit.country is the country name from the API; keys cover the spellings it has used.
 const COUNTRY_CODE: Record<string, string> = {
@@ -73,6 +78,13 @@ export default function SchedulePage() {
           const statusOf = (r: Race) => (isPast(r) ? 'Completed' : r.round === nextRound ? 'Next' : 'Upcoming');
           return (
             <>
+              {MAPBOX_TOKEN && (
+                <div className="mb-6">
+                  <Suspense fallback={<div className="h-72 animate-pulse rounded-xl bg-zinc-900 sm:h-96" />}>
+                    <ScheduleMap races={races} nextRound={nextRound} token={MAPBOX_TOKEN} />
+                  </Suspense>
+                </div>
+              )}
               {nextRound && (
                 <a href={`#round-${nextRound}`} className="mb-4 inline-block text-sm text-accent-text hover:underline">
                   Jump to the next race
