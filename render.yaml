@@ -8,6 +8,8 @@ services:
     envVars:
       - key: MONGODB_URI
         sync: false # entered once in the Render dashboard when the blueprint is created
+      - key: VITE_MAPBOX_TOKEN
+        sync: false # public Mapbox token for the schedule map; read at build time, so redeploy after changing it
       - key: JWT_SECRET
         generateValue: true
       - key: WARM_TOKEN

@@ -9,6 +9,8 @@ RUN npm ci
 COPY tsconfig.base.json ./
 COPY shared shared
 COPY client client
+# Vite bakes VITE_ variables into the page at build time. Render passes a dashboard env var into a Docker build only when it is declared here.
+ARG VITE_MAPBOX_TOKEN
 RUN npm run build -w client
 
 # Runtime: server source (run directly by Node) + built client
