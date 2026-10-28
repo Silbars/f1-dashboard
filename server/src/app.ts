@@ -20,8 +20,9 @@ export function createApp(opts: { clientDir?: string } = {}) {
       contentSecurityPolicy: {
         directives: {
           upgradeInsecureRequests: null,
-          connectSrc: ["'self'", 'https://api.mapbox.com', 'https://events.mapbox.com'],
+          connectSrc: ["'self'", 'https://api.mapbox.com', 'https://*.tiles.mapbox.com', 'https://events.mapbox.com'],
           workerSrc: ["'self'", 'blob:'],
+          childSrc: ["'self'", 'blob:'],
           imgSrc: ["'self'", 'data:', 'blob:'],
         },
       },
