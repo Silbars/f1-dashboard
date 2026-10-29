@@ -3,13 +3,27 @@
 /* Livery colours are set at runtime on <html> (see lib/livery.ts); these are the F1 red defaults. */
 @theme {
   --font-sans: "Archivo", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
-  --color-accent: var(--accent);
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;  --color-accent: var(--accent);
   --color-accent-hi: var(--accent-hi);
   --color-accent-text: var(--accent-text);
   --color-accent-2: var(--accent-2);
   --color-accent-3: var(--accent-3);
   --color-accent-ink: var(--accent-ink);
+  --animate-bar-grow: bar-grow 900ms cubic-bezier(0.32, 0.72, 0, 1) both;
+
+  --animate-chart-reveal: chart-reveal 1100ms cubic-bezier(0.32, 0.72, 0, 1) both;
+
+  @keyframes chart-reveal {
+    from {
+      clip-path: inset(0 100% 0 0);
+    }
+  }
+
+  @keyframes bar-grow {
+    from {
+      transform: scaleX(0);
+    }
+  }
 }
 
 :root {
